@@ -1,0 +1,7 @@
+PyQt6>=6.6
+pyqtgraph>=0.13
+gymnasium[classic_control,box2d]>=1.0
+stable-baselines3>=2.3
+sb3-contrib>=2.3
+numpy
+torch
