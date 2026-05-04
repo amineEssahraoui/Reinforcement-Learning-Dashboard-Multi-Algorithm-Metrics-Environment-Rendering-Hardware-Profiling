@@ -4,6 +4,7 @@ Throttled to avoid flooding the event loop.
 """
 
 import time
+import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
 
@@ -70,14 +71,22 @@ class DashboardCallback(BaseCallback):
             "time_elapsed": round(elapsed, 1),
         }
 
-        # ── Episode stats (from Monitor wrapper) ────────────────
-        # These are logged by SB3 into the logger
-        if hasattr(self, "logger") and self.logger is not None:
-            name_to_value = getattr(self.logger, "name_to_value", {})
-            if "rollout/ep_rew_mean" in name_to_value:
-                metrics["ep_rew_mean"] = name_to_value["rollout/ep_rew_mean"]
-            if "rollout/ep_len_mean" in name_to_value:
-                metrics["ep_len_mean"] = name_to_value["rollout/ep_len_mean"]
+        # ── Episode stats from ep_info_buffer (populated by Monitor wrapper) ──
+        # This is the most reliable source — updated whenever an episode ends.
+        ep_info_buffer = getattr(self.model, "ep_info_buffer", None)
+        if ep_info_buffer and len(ep_info_buffer) > 0:
+            rewards = [ep["r"] for ep in ep_info_buffer]
+            lengths = [ep["l"] for ep in ep_info_buffer]
+            metrics["ep_rew_mean"] = float(np.mean(rewards))
+            metrics["ep_len_mean"] = float(np.mean(lengths))
+        else:
+            # Fallback: try logger (may lag behind by one rollout)
+            if hasattr(self, "logger") and self.logger is not None:
+                name_to_value = getattr(self.logger, "name_to_value", {})
+                if "rollout/ep_rew_mean" in name_to_value:
+                    metrics["ep_rew_mean"] = name_to_value["rollout/ep_rew_mean"]
+                if "rollout/ep_len_mean" in name_to_value:
+                    metrics["ep_len_mean"] = name_to_value["rollout/ep_len_mean"]
 
         # ── Loss values (algorithm-dependent) ────────────────────
         losses = {}
@@ -99,12 +108,5 @@ class DashboardCallback(BaseCallback):
                     short_key = key.split("/")[-1]
                     losses[short_key] = name_to_value[key]
         metrics["losses"] = losses
-
-        # ── Also try to extract from self.locals ─────────────────
-        if "infos" in self.locals:
-            for info in self.locals["infos"]:
-                if "episode" in info:
-                    metrics["latest_ep_reward"] = info["episode"]["r"]
-                    metrics["latest_ep_length"] = info["episode"]["l"]
 
         return metrics

@@ -72,6 +72,7 @@ class TrainingWorker(QThread):
 
     def run(self):
         """Execute the training loop (called by QThread.start())."""
+        self.trained_model = None  # Reset before each run
         env = None
         try:
             # Create environment (headless for speed)
@@ -104,20 +105,19 @@ class TrainingWorker(QThread):
                 progress_bar=False,
             )
 
-            if self._stop_flag:
-                self.training_stopped.emit()
-                return
-
-            # Save model
+            # Save model (always — so evaluation works even after a stop)
             os.makedirs(self._save_dir, exist_ok=True)
             model_path = os.path.join(
                 self._save_dir,
                 f"{self._algo_name}_{self._env_id}".replace("/", "_")
             )
             model.save(model_path)
-            
-            # Keep reference for evaluation
             self.trained_model = model
+
+            if self._stop_flag:
+                self.training_stopped.emit()
+                return
+
             self.training_complete.emit(model_path)
 
         except Exception as e:

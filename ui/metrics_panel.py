@@ -9,11 +9,11 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel,
-    QGroupBox, QGridLayout,
+    QGroupBox, QGridLayout, QSizePolicy,
 )
 
 from ui.theme import (
-    BG_PRIMARY, BG_SECONDARY, BG_TERTIARY, BORDER,
+    BG_PRIMARY, BG_SECONDARY, BG_TERTIARY, BG_ELEVATED, BORDER,
     TEXT_PRIMARY, TEXT_SECONDARY, TEXT_DISABLED,
     ACCENT, ACCENT_SECONDARY, SUCCESS, WARNING, DANGER,
     CHART_REWARD, CHART_LOSS_POLICY, CHART_LOSS_VALUE,
@@ -51,31 +51,44 @@ class MetricsPanel(QWidget):
         layout.setSpacing(0)
 
         # Container
-        container = QWidget()
-        container.setStyleSheet(f"""
+        self._container = QWidget()
+        self._container.setStyleSheet(f"""
             QWidget {{
                 background-color: {BG_SECONDARY};
                 border: 1px solid {BORDER};
                 border-radius: 12px;
             }}
         """)
-        container_layout = QVBoxLayout(container)
+        container_layout = QVBoxLayout(self._container)
         container_layout.setContentsMargins(8, 8, 8, 8)
-        container_layout.setSpacing(4)
+        container_layout.setSpacing(6)
 
-        # Title
-        title = QLabel("📊  Metrics Analytics")
+        # Title row
+        title_row = QWidget()
+        title_row.setStyleSheet("background: transparent; border: none;")
+        title_row_layout = QHBoxLayout(title_row)
+        title_row_layout.setContentsMargins(0, 0, 0, 0)
+        title_row_layout.setSpacing(10)
+
+        accent_bar = QWidget()
+        accent_bar.setFixedSize(3, 18)
+        accent_bar.setStyleSheet(f"background-color: {ACCENT}; border-radius: 2px; border: none;")
+        title_row_layout.addWidget(accent_bar)
+
+        title = QLabel("Metrics Analytics")
         title.setStyleSheet(f"""
             QLabel {{
                 color: {TEXT_PRIMARY};
                 font-size: 14px;
                 font-weight: 700;
-                padding: 4px 8px;
+                padding: 4px 0px;
                 background: transparent;
                 border: none;
             }}
         """)
-        container_layout.addWidget(title)
+        title_row_layout.addWidget(title)
+        title_row_layout.addStretch()
+        container_layout.addWidget(title_row)
 
         # Tab widget
         self._tab_widget = QTabWidget()
@@ -85,15 +98,15 @@ class MetricsPanel(QWidget):
         training_tab = QWidget()
         training_tab.setStyleSheet("background: transparent; border: none;")
         self._setup_training_tab(training_tab)
-        self._tab_widget.addTab(training_tab, "📈 Training")
+        self._tab_widget.addTab(training_tab, "Training")
 
         # Evaluation tab
         eval_tab = QWidget()
         eval_tab.setStyleSheet("background: transparent; border: none;")
         self._setup_evaluation_tab(eval_tab)
-        self._tab_widget.addTab(eval_tab, "🏆 Evaluation")
+        self._tab_widget.addTab(eval_tab, "Evaluation")
 
-        layout.addWidget(container)
+        layout.addWidget(self._container)
 
     def _create_plot_widget(self, title: str, y_label: str) -> pg.PlotWidget:
         """Create a styled PlotWidget."""
@@ -103,7 +116,10 @@ class MetricsPanel(QWidget):
         pw.setTitle(title, color=TEXT_PRIMARY, size="11pt")
         pw.setLabel("bottom", "Timesteps", color=TEXT_SECONDARY, units=None)
         pw.setLabel("left", y_label, color=TEXT_SECONDARY, units=None)
-        pw.setMinimumHeight(140)
+        pw.setMinimumHeight(160)
+        sp = pw.sizePolicy()
+        sp.setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        pw.setSizePolicy(sp)
         
         # Style the axes
         for axis_name in ["bottom", "left"]:
@@ -131,7 +147,7 @@ class MetricsPanel(QWidget):
             brush=pg.mkBrush(QColor(CHART_REWARD + "30")),
         )
         self._reward_plot.addItem(self._reward_fill)
-        layout.addWidget(self._reward_plot, 2)
+        layout.addWidget(self._reward_plot, 3)
 
         # ── Loss Chart ──
         self._loss_plot = self._create_plot_widget("Training Loss", "Loss")
@@ -155,7 +171,7 @@ class MetricsPanel(QWidget):
             labelTextColor=TEXT_SECONDARY,
             labelTextSize="9pt",
         )
-        layout.addWidget(self._loss_plot, 2)
+        layout.addWidget(self._loss_plot, 3)
 
         # ── Episode Length Chart ──
         self._ep_len_plot = self._create_plot_widget("Episode Length", "Steps")
@@ -163,49 +179,55 @@ class MetricsPanel(QWidget):
             pen=pg.mkPen(color=CHART_EP_LENGTH, width=2),
             name="ep_len_mean",
         )
-        layout.addWidget(self._ep_len_plot, 1)
+        layout.addWidget(self._ep_len_plot, 2)
 
         # ── Live Stats Row ──
-        stats_widget = QWidget()
-        stats_widget.setStyleSheet(f"""
+        self._stats_widget = QWidget()
+        self._stats_widget.setStyleSheet(f"""
             QWidget {{
-                background-color: {BG_TERTIARY};
+                background-color: {BG_ELEVATED};
                 border-radius: 8px;
-                border: none;
+                border: 1px solid {BORDER};
             }}
         """)
-        stats_layout = QHBoxLayout(stats_widget)
-        stats_layout.setContentsMargins(12, 6, 12, 6)
-        stats_layout.setSpacing(16)
+        stats_layout = QHBoxLayout(self._stats_widget)
+        stats_layout.setContentsMargins(8, 6, 8, 6)
+        stats_layout.setSpacing(4)
 
         self._stat_labels = {}
         stat_items = [
-            ("timesteps", "⏱ Timesteps", "0"),
-            ("fps", "⚡ FPS", "0"),
-            ("ep_reward", "🎯 Reward", "—"),
-            ("time", "🕐 Elapsed", "0s"),
+            ("timesteps", "Timesteps", "0", ACCENT),
+            ("fps", "FPS", "0", ACCENT_SECONDARY),
+            ("ep_reward", "Reward", "—", SUCCESS),
+            ("time", "Elapsed", "0s", WARNING),
         ]
-        for key, label_text, default_val in stat_items:
+        for i, (key, label_text, default_val, color) in enumerate(stat_items):
+            if i > 0:
+                sep = QWidget()
+                sep.setFixedSize(1, 30)
+                sep.setStyleSheet(f"background-color: {BORDER}; border: none;")
+                stats_layout.addWidget(sep)
+
             stat_container = QWidget()
             stat_container.setStyleSheet("background: transparent; border: none;")
             sl = QVBoxLayout(stat_container)
-            sl.setContentsMargins(0, 0, 0, 0)
-            sl.setSpacing(1)
-            
+            sl.setContentsMargins(8, 2, 8, 2)
+            sl.setSpacing(2)
+
             lbl = QLabel(label_text)
-            lbl.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 10px; font-weight: 600; border: none;")
+            lbl.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 10px; font-weight: 600; border: none; letter-spacing: 0.5px;")
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             sl.addWidget(lbl)
-            
+
             val = QLabel(default_val)
-            val.setStyleSheet(f"color: {TEXT_PRIMARY}; font-size: 15px; font-weight: 700; border: none;")
+            val.setStyleSheet(f"color: {color}; font-size: 16px; font-weight: 700; border: none;")
             val.setAlignment(Qt.AlignmentFlag.AlignCenter)
             sl.addWidget(val)
-            
-            self._stat_labels[key] = val
-            stats_layout.addWidget(stat_container)
 
-        layout.addWidget(stats_widget)
+            self._stat_labels[key] = val
+            stats_layout.addWidget(stat_container, 1)
+
+        layout.addWidget(self._stats_widget)
 
     def _setup_evaluation_tab(self, parent: QWidget):
         layout = QVBoxLayout(parent)
@@ -232,25 +254,27 @@ class MetricsPanel(QWidget):
         layout.addWidget(self._eval_plot, 3)
 
         # ── Summary Statistics Card ──
-        summary_group = QGroupBox("Summary Statistics")
-        summary_group.setStyleSheet(f"""
+        self._summary_group = QGroupBox("Summary Statistics")
+        self._summary_group.setStyleSheet(f"""
             QGroupBox {{
-                background-color: {BG_TERTIARY};
+                background-color: {BG_ELEVATED};
                 border: 1px solid {BORDER};
                 border-radius: 10px;
-                margin-top: 14px;
-                padding: 16px 12px 12px 12px;
+                margin-top: 18px;
+                padding: 14px 12px 12px 12px;
                 font-weight: 600;
                 color: {TEXT_PRIMARY};
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 2px 12px;
-                color: {TEXT_PRIMARY};
+                padding: 3px 12px;
+                color: {TEXT_SECONDARY};
+                font-size: 11px;
+                font-weight: 700;
             }}
         """)
-        summary_layout = QGridLayout(summary_group)
+        summary_layout = QGridLayout(self._summary_group)
         summary_layout.setSpacing(10)
 
         self._eval_stat_labels = {}
@@ -280,7 +304,62 @@ class MetricsPanel(QWidget):
             self._eval_stat_labels[key] = val
             summary_layout.addWidget(cell, row, col)
 
-        layout.addWidget(summary_group)
+        layout.addWidget(self._summary_group)
+
+    # ─── Theme ────────────────────────────────────────────────────────────────
+
+    def refresh_theme(self):
+        """Re-apply all inline styles to match the current theme."""
+        import ui.theme as t
+
+        self._container.setStyleSheet(f"""
+            QWidget {{
+                background-color: {t.BG_SECONDARY};
+                border: 1px solid {t.BORDER};
+                border-radius: 12px;
+            }}
+        """)
+        self._stats_widget.setStyleSheet(f"""
+            QWidget {{
+                background-color: {t.BG_ELEVATED};
+                border-radius: 8px;
+                border: 1px solid {t.BORDER};
+            }}
+        """)
+        self._summary_group.setStyleSheet(f"""
+            QGroupBox {{
+                background-color: {t.BG_ELEVATED};
+                border: 1px solid {t.BORDER};
+                border-radius: 10px;
+                margin-top: 18px;
+                padding: 14px 12px 12px 12px;
+                font-weight: 600;
+                color: {t.TEXT_PRIMARY};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 3px 12px;
+                color: {t.TEXT_SECONDARY};
+                font-size: 11px;
+                font-weight: 700;
+            }}
+        """)
+        plot_defs = [
+            (self._reward_plot,  "Episode Reward",      "Reward",       "Timesteps", "11pt"),
+            (self._loss_plot,    "Training Loss",       "Loss",         "Timesteps", "11pt"),
+            (self._ep_len_plot,  "Episode Length",      "Steps",        "Timesteps", "11pt"),
+            (self._eval_plot,    "Reward per Episode",  "Total Reward", "Episode",   "12pt"),
+        ]
+        for plot, title, ylabel, xlabel, size in plot_defs:
+            plot.setBackground(pg.mkColor(t.CHART_BG))
+            plot.setTitle(title, color=t.TEXT_PRIMARY, size=size)
+            plot.setLabel("bottom", xlabel, color=t.TEXT_SECONDARY, units=None)
+            plot.setLabel("left", ylabel, color=t.TEXT_SECONDARY, units=None)
+            for axis_name in ["bottom", "left"]:
+                axis = plot.getPlotItem().getAxis(axis_name)
+                axis.setPen(pg.mkPen(color=t.CHART_GRID, width=1))
+                axis.setTextPen(pg.mkPen(color=t.TEXT_SECONDARY))
 
     # ─── Data Buffers ─────────────────────────────────────────────────────────
 

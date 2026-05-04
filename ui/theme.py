@@ -5,10 +5,11 @@ Defines color tokens, fonts, and global QSS stylesheets.
 
 # ─── Color Tokens ────────────────────────────────────────────────────────────
 
-BG_PRIMARY = "#0f1117"
-BG_SECONDARY = "#1a1d27"
-BG_TERTIARY = "#252830"
-BG_ELEVATED = "#2a2d38"
+BG_PRIMARY = "#0d0f18"
+BG_SECONDARY = "#151823"
+BG_TERTIARY = "#1e2130"
+BG_ELEVATED = "#252838"
+BG_CARD = "#1b1e2b"
 
 ACCENT = "#6c5ce7"
 ACCENT_HOVER = "#7f70f0"
@@ -34,8 +35,8 @@ CHART_LOSS_VALUE = "#fdcb6e"
 CHART_LOSS_ENTROPY = "#00cec9"
 CHART_EP_LENGTH = "#00b894"
 CHART_EVAL_BAR = "#6c5ce7"
-CHART_GRID = "#2d303a"
-CHART_BG = "#13151d"
+CHART_GRID = "#252838"
+CHART_BG = "#0f1119"
 
 # ─── Font ─────────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,57 @@ FONT_SIZE_MD = "13px"
 FONT_SIZE_LG = "16px"
 FONT_SIZE_XL = "22px"
 FONT_SIZE_TITLE = "28px"
+
+# ─── Theme Registry ──────────────────────────────────────────────────────────
+
+_THEME_PALETTE: dict = {
+    "dark": {
+        "BG_PRIMARY":     "#0d0f18",
+        "BG_SECONDARY":   "#151823",
+        "BG_TERTIARY":    "#1e2130",
+        "BG_ELEVATED":    "#252838",
+        "BG_CARD":        "#1b1e2b",
+        "TEXT_PRIMARY":   "#e8e8e8",
+        "TEXT_SECONDARY": "#8b8d97",
+        "TEXT_DISABLED":  "#555860",
+        "BORDER":         "#2d303a",
+        "CHART_BG":       "#0f1119",
+        "CHART_GRID":     "#252838",
+    },
+    "light": {
+        "BG_PRIMARY":     "#f4f5fb",
+        "BG_SECONDARY":   "#ffffff",
+        "BG_TERTIARY":    "#edf0f8",
+        "BG_ELEVATED":    "#e5e8f2",
+        "BG_CARD":        "#f9fafd",
+        "TEXT_PRIMARY":   "#1c1e2d",
+        "TEXT_SECONDARY": "#616479",
+        "TEXT_DISABLED":  "#b5b8cc",
+        "BORDER":         "#d4d7e8",
+        "CHART_BG":       "#f8f9fd",
+        "CHART_GRID":     "#e5e8f2",
+    },
+}
+
+_current_mode: str = "dark"
+
+
+def set_theme(mode: str) -> None:
+    """Switch the active theme and update all module-level color tokens."""
+    global _current_mode
+    if mode not in _THEME_PALETTE:
+        raise ValueError(f"Unknown theme: {mode!r}. Choose 'dark' or 'light'.")
+    _current_mode = mode
+    palette = _THEME_PALETTE[mode]
+    g = globals()
+    for key, value in palette.items():
+        g[key] = value
+
+
+def get_current_mode() -> str:
+    """Return the currently active theme mode ('dark' or 'light')."""
+    return _current_mode
+
 
 # ─── Global Stylesheet ───────────────────────────────────────────────────────
 
@@ -110,45 +162,51 @@ def get_stylesheet() -> str:
     /* ── Tab Widget ────────────────────────────────────────────────── */
     QTabWidget::pane {{
         border: 1px solid {BORDER};
-        border-radius: 8px;
+        border-top: none;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
         background-color: {BG_SECONDARY};
-        top: -1px;
+    }}
+    QTabBar {{
+        background: transparent;
     }}
     QTabBar::tab {{
-        background-color: {BG_TERTIARY};
+        background-color: transparent;
         color: {TEXT_SECONDARY};
-        padding: 8px 20px;
+        padding: 9px 22px;
         margin-right: 2px;
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
+        border: none;
+        border-bottom: 2px solid transparent;
         font-weight: 600;
         font-size: {FONT_SIZE_MD};
     }}
     QTabBar::tab:selected {{
-        background-color: {BG_SECONDARY};
         color: {ACCENT};
         border-bottom: 2px solid {ACCENT};
+        background-color: transparent;
     }}
     QTabBar::tab:hover:!selected {{
-        background-color: {BG_ELEVATED};
         color: {TEXT_PRIMARY};
+        border-bottom: 2px solid {BORDER};
     }}
 
     /* ── Group Box ─────────────────────────────────────────────────── */
     QGroupBox {{
-        background-color: {BG_SECONDARY};
+        background-color: {BG_TERTIARY};
         border: 1px solid {BORDER};
         border-radius: 10px;
-        margin-top: 14px;
-        padding: 16px 12px 12px 12px;
+        margin-top: 18px;
+        padding: 14px 12px 12px 12px;
         font-weight: 600;
         font-size: {FONT_SIZE_MD};
     }}
     QGroupBox::title {{
         subcontrol-origin: margin;
         subcontrol-position: top left;
-        padding: 2px 12px;
-        color: {TEXT_PRIMARY};
+        padding: 3px 12px;
+        color: {TEXT_SECONDARY};
+        font-size: {FONT_SIZE_SM};
+        font-weight: 700;
     }}
 
     /* ── Labels ────────────────────────────────────────────────────── */
@@ -191,7 +249,28 @@ def get_stylesheet() -> str:
         border-radius: 6px;
         selection-background-color: {ACCENT};
         selection-color: white;
-        padding: 4px;
+        outline: 0;
+        padding: 2px;
+    }}
+    QComboBox QAbstractItemView::item {{
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 4px;
+    }}
+    QComboBox QAbstractItemView::item:hover:!disabled {{
+        background-color: {BG_ELEVATED};
+    }}
+    QComboBox QAbstractItemView::item:selected:!disabled {{
+        background-color: {ACCENT};
+        color: white;
+    }}
+    QComboBox QAbstractItemView::item:disabled {{
+        color: {TEXT_DISABLED};
+        background: transparent;
+        min-height: 22px;
+        padding: 4px 10px 2px 10px;
+        font-size: 10px;
+        font-weight: 700;
     }}
 
     /* ── Spin Box ──────────────────────────────────────────────────── */
@@ -213,44 +292,55 @@ def get_stylesheet() -> str:
     QSpinBox::up-button, QDoubleSpinBox::up-button {{
         subcontrol-origin: border;
         subcontrol-position: top right;
-        width: 20px;
+        width: 22px;
+        height: 50%;
         border-left: 1px solid {BORDER};
         border-top-right-radius: 6px;
-        background-color: {BG_TERTIARY};
+        background-color: {BG_ELEVATED};
     }}
     QSpinBox::down-button, QDoubleSpinBox::down-button {{
         subcontrol-origin: border;
         subcontrol-position: bottom right;
-        width: 20px;
+        width: 22px;
+        height: 50%;
         border-left: 1px solid {BORDER};
         border-bottom-right-radius: 6px;
-        background-color: {BG_TERTIARY};
+        background-color: {BG_ELEVATED};
+    }}
+    QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
+    QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {{
+        background-color: {ACCENT};
     }}
     QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {{
         border-left: 4px solid transparent;
         border-right: 4px solid transparent;
         border-bottom: 5px solid {TEXT_SECONDARY};
+        width: 0;
+        height: 0;
     }}
     QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {{
         border-left: 4px solid transparent;
         border-right: 4px solid transparent;
         border-top: 5px solid {TEXT_SECONDARY};
+        width: 0;
+        height: 0;
     }}
 
     /* ── Push Button ───────────────────────────────────────────────── */
     QPushButton {{
-        background-color: {BG_TERTIARY};
+        background-color: {BG_ELEVATED};
         color: {TEXT_PRIMARY};
         border: 1px solid {BORDER};
         border-radius: 8px;
-        padding: 8px 18px;
+        padding: 8px 20px;
         font-weight: 600;
         font-size: {FONT_SIZE_MD};
         min-height: 20px;
     }}
     QPushButton:hover {{
-        background-color: {BG_ELEVATED};
+        background-color: {BG_TERTIARY};
         border-color: {ACCENT};
+        color: white;
     }}
     QPushButton:pressed {{
         background-color: {ACCENT_PRESSED};
@@ -264,12 +354,14 @@ def get_stylesheet() -> str:
 
     /* ── Primary Button ────────────────────────────────────────────── */
     QPushButton[cssClass="primary"] {{
-        background-color: {ACCENT};
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 {ACCENT}, stop:1 {ACCENT_HOVER});
         color: white;
         border: none;
     }}
     QPushButton[cssClass="primary"]:hover {{
-        background-color: {ACCENT_HOVER};
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 {ACCENT_HOVER}, stop:1 #9180f5);
     }}
     QPushButton[cssClass="primary"]:pressed {{
         background-color: {ACCENT_PRESSED};
@@ -282,33 +374,39 @@ def get_stylesheet() -> str:
         border: none;
     }}
     QPushButton[cssClass="danger"]:hover {{
-        background-color: #e8836e;
+        background-color: #eb816a;
+    }}
+    QPushButton[cssClass="danger"]:pressed {{
+        background-color: #c9604a;
     }}
 
     /* ── Success Button ────────────────────────────────────────────── */
     QPushButton[cssClass="success"] {{
-        background-color: {SUCCESS};
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 {SUCCESS}, stop:1 #00d4a8);
         color: white;
         border: none;
     }}
     QPushButton[cssClass="success"]:hover {{
-        background-color: #00d4a8;
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 #00d4a8, stop:1 #00e8b8);
     }}
 
     /* ── Progress Bar ──────────────────────────────────────────────── */
     QProgressBar {{
-        background-color: {BG_TERTIARY};
+        background-color: {BG_SECONDARY};
         border: 1px solid {BORDER};
         border-radius: 6px;
         text-align: center;
         color: {TEXT_PRIMARY};
         font-weight: 600;
+        font-size: {FONT_SIZE_SM};
         min-height: 18px;
     }}
     QProgressBar::chunk {{
         background: qlineargradient(
             x1:0, y1:0, x2:1, y2:0,
-            stop:0 {ACCENT}, stop:1 {ACCENT_SECONDARY}
+            stop:0 {ACCENT}, stop:0.5 {ACCENT_HOVER}, stop:1 {ACCENT_SECONDARY}
         );
         border-radius: 5px;
     }}
@@ -365,6 +463,13 @@ def get_stylesheet() -> str:
         background-color: {BG_SECONDARY};
         color: {TEXT_SECONDARY};
         border-top: 1px solid {BORDER};
+        font-size: {FONT_SIZE_SM};
+        padding: 2px 8px;
+    }}
+
+    /* ── Form Label ────────────────────────────────────────────────── */
+    QFormLayout QLabel {{
+        color: {TEXT_SECONDARY};
         font-size: {FONT_SIZE_SM};
     }}
     """

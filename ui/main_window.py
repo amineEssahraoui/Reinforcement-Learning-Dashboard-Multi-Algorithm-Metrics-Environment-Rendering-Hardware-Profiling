@@ -8,12 +8,14 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QAction
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QSplitter, QMessageBox, QFileDialog, QStatusBar, QLabel,
+    QSplitter, QMessageBox, QFileDialog, QStatusBar, QLabel, QFrame,
+    QPushButton,
 )
 
+import ui.theme as _theme
 from ui.theme import (
     BG_PRIMARY, BG_SECONDARY, BORDER, TEXT_PRIMARY, TEXT_SECONDARY,
-    ACCENT, SUCCESS, FONT_FAMILY,
+    ACCENT, ACCENT_SECONDARY, SUCCESS, FONT_FAMILY,
 )
 from ui.metrics_panel import MetricsPanel
 from ui.hardware_panel import HardwarePanel
@@ -73,65 +75,61 @@ class MainWindow(QMainWindow):
 
     def _setup_ui(self):
         """Build the main layout with splitter panels."""
-        central = QWidget()
-        central.setStyleSheet(f"background-color: {BG_PRIMARY}; border: none;")
-        self.setCentralWidget(central)
+        self._central = QWidget()
+        self.setCentralWidget(self._central)
 
-        main_layout = QVBoxLayout(central)
+        main_layout = QVBoxLayout(self._central)
         main_layout.setContentsMargins(10, 10, 10, 6)
         main_layout.setSpacing(0)
 
         # ── Header ──
-        header = QWidget()
-        header.setFixedHeight(50)
-        header.setStyleSheet(f"""
-            background-color: {BG_SECONDARY};
-            border: 1px solid {BORDER};
-            border-radius: 12px;
-        """)
-        header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(16, 0, 16, 0)
+        self._header = QWidget()
+        self._header.setFixedHeight(56)
+        header_layout = QHBoxLayout(self._header)
+        header_layout.setContentsMargins(18, 0, 18, 0)
+        header_layout.setSpacing(0)
 
-        app_title = QLabel("🧠  RL Dashboard")
-        app_title.setStyleSheet(f"""
-            color: {TEXT_PRIMARY};
-            font-size: 20px;
-            font-weight: 800;
-            background: transparent;
-            border: none;
-        """)
-        header_layout.addWidget(app_title)
+        # Colored accent bar
+        self._header_accent_bar = QFrame()
+        self._header_accent_bar.setFixedSize(4, 30)
+        header_layout.addWidget(self._header_accent_bar)
+        header_layout.addSpacing(12)
 
-        subtitle = QLabel("Reinforcement Learning Prototyping Tool")
-        subtitle.setStyleSheet(f"""
-            color: {TEXT_SECONDARY};
-            font-size: 12px;
-            font-weight: 400;
-            background: transparent;
-            border: none;
-        """)
-        header_layout.addWidget(subtitle)
+        self._app_title = QLabel("RL Dashboard")
+        header_layout.addWidget(self._app_title)
+        header_layout.addSpacing(12)
+
+        # Vertical divider
+        self._header_divider = QFrame()
+        self._header_divider.setFixedSize(1, 20)
+        header_layout.addWidget(self._header_divider)
+        header_layout.addSpacing(12)
+
+        self._subtitle_label = QLabel("Reinforcement Learning Prototyping Tool")
+        header_layout.addWidget(self._subtitle_label)
         header_layout.addStretch()
 
-        # Version badge
-        version_badge = QLabel("v1.0")
-        version_badge.setStyleSheet(f"""
-            color: {ACCENT};
-            background-color: {ACCENT}22;
-            border: 1px solid {ACCENT}44;
-            border-radius: 6px;
-            padding: 2px 10px;
-            font-size: 11px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(version_badge)
+        # Theme toggle button
+        self._theme_btn = QPushButton("Light Mode")
+        self._theme_btn.setFixedHeight(30)
+        self._theme_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._theme_btn.clicked.connect(self._toggle_theme)
+        header_layout.addSpacing(10)
+        header_layout.addWidget(self._theme_btn)
+        header_layout.addSpacing(10)
 
-        main_layout.addWidget(header)
+        # Version badge
+        self._version_badge = QLabel("v1.0")
+        header_layout.addWidget(self._version_badge)
+
+        self._apply_inline_styles()
+        main_layout.addWidget(self._header)
         main_layout.addSpacing(8)
 
-        # ── Main Splitter ──
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.setHandleWidth(3)
+        # ── Main Splitter (3 columns) ──
+        self._splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._splitter.setHandleWidth(3)
+        splitter = self._splitter
         splitter.setStyleSheet(f"""
             QSplitter::handle {{
                 background-color: {BORDER};
@@ -143,7 +141,7 @@ class MainWindow(QMainWindow):
             }}
         """)
 
-        # ── Left Panel ──
+        # ── Column 1: Metrics + Hardware ──
         left_panel = QWidget()
         left_panel.setStyleSheet("background: transparent; border: none;")
         left_layout = QVBoxLayout(left_panel)
@@ -158,24 +156,132 @@ class MainWindow(QMainWindow):
 
         splitter.addWidget(left_panel)
 
-        # ── Right Panel ──
+        # ── Column 2: Environment Render (full height) ──
+        center_panel = QWidget()
+        center_panel.setStyleSheet("background: transparent; border: none;")
+        center_layout = QVBoxLayout(center_panel)
+        center_layout.setContentsMargins(4, 0, 4, 0)
+        center_layout.setSpacing(0)
+
+        self._render_widget = EnvironmentRenderWidget()
+        center_layout.addWidget(self._render_widget)
+
+        splitter.addWidget(center_panel)
+
+        # ── Column 3: Configuration (full height, scrollable) ──
         right_panel = QWidget()
         right_panel.setStyleSheet("background: transparent; border: none;")
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(4, 0, 0, 0)
-        right_layout.setSpacing(8)
+        right_layout.setSpacing(0)
 
         self._controls = EnvironmentControls()
-        right_layout.addWidget(self._controls, 45)
-
-        self._render_widget = EnvironmentRenderWidget()
-        right_layout.addWidget(self._render_widget, 55)
+        right_layout.addWidget(self._controls)
 
         splitter.addWidget(right_panel)
 
-        # Set initial splitter proportions (45% left, 55% right)
-        splitter.setSizes([720, 880])
+        # 3-column proportions: ~640 | ~600 | ~360 at 1600px wide
+        splitter.setSizes([640, 600, 360])
         main_layout.addWidget(splitter, 1)
+
+    # ─── Theme ────────────────────────────────────────────────────────
+
+    def _toggle_theme(self):
+        """Switch between dark and light themes."""
+        from PyQt6.QtWidgets import QApplication
+        new_mode = "light" if _theme.get_current_mode() == "dark" else "dark"
+        _theme.set_theme(new_mode)
+        QApplication.instance().setStyleSheet(_theme.get_stylesheet())
+        self._apply_inline_styles()
+
+    def _apply_inline_styles(self):
+        """Re-apply all inline widget styles using the current theme tokens."""
+        t = _theme
+        is_dark = t.get_current_mode() == "dark"
+        header_end = "#191c2a" if is_dark else "#eef0fa"
+
+        self._central.setStyleSheet(
+            f"background-color: {t.BG_PRIMARY}; border: none;"
+        )
+        self._header.setStyleSheet(f"""
+            background: qlineargradient(
+                x1:0, y1:0, x2:1, y2:0,
+                stop:0 {t.BG_SECONDARY}, stop:1 {header_end}
+            );
+            border: 1px solid {t.BORDER};
+            border-radius: 12px;
+        """)
+        self._header_accent_bar.setStyleSheet(f"""
+            background: qlineargradient(
+                x1:0, y1:0, x2:0, y2:1,
+                stop:0 {t.ACCENT}, stop:1 {t.ACCENT_SECONDARY}
+            );
+            border-radius: 2px;
+            border: none;
+        """)
+        self._app_title.setStyleSheet(f"""
+            color: {t.TEXT_PRIMARY};
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: transparent;
+            border: none;
+        """)
+        self._header_divider.setStyleSheet(
+            f"background-color: {t.BORDER}; border: none;"
+        )
+        self._subtitle_label.setStyleSheet(f"""
+            color: {t.TEXT_SECONDARY};
+            font-size: 12px;
+            font-weight: 400;
+            background: transparent;
+            border: none;
+        """)
+        self._theme_btn.setText("Light Mode" if is_dark else "Dark Mode")
+        self._theme_btn.setStyleSheet(f"""
+            QPushButton {{
+                color: {t.TEXT_SECONDARY};
+                background-color: {t.BG_TERTIARY};
+                border: 1px solid {t.BORDER};
+                border-radius: 6px;
+                padding: 4px 14px;
+                font-size: 11px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                color: {t.TEXT_PRIMARY};
+                border-color: {t.ACCENT};
+            }}
+        """)
+        self._version_badge.setStyleSheet(f"""
+            color: {t.ACCENT};
+            background-color: {t.ACCENT}1a;
+            border: 1px solid {t.ACCENT}40;
+            border-radius: 6px;
+            padding: 3px 12px;
+            font-size: 11px;
+            font-weight: 700;
+        """)
+        if hasattr(self, "_splitter"):
+            self._splitter.setStyleSheet(f"""
+                QSplitter::handle {{
+                    background-color: {t.BORDER};
+                    margin: 4px 2px;
+                    border-radius: 1px;
+                }}
+                QSplitter::handle:hover {{
+                    background-color: {t.ACCENT};
+                }}
+            """)
+        # Update panels (guarded for call during construction)
+        if hasattr(self, "_metrics_panel"):
+            self._metrics_panel.refresh_theme()
+        if hasattr(self, "_hardware_panel"):
+            self._hardware_panel.refresh_theme()
+        if hasattr(self, "_controls"):
+            self._controls.refresh_theme()
+        if hasattr(self, "_render_widget"):
+            self._render_widget.refresh_theme()
 
     # ─── Signal Wiring ────────────────────────────────────────────────────────
 

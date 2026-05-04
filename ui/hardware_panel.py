@@ -20,23 +20,23 @@ from ui.theme import (
 
 
 class HardwareCard(QWidget):
-    """Individual hardware metric card with icon, label, and mini chart."""
+    """Individual hardware metric card with colored indicator, label, and mini chart."""
 
-    def __init__(self, icon: str, title: str, subtitle: str,
-                 color: str, parent=None):
+    def __init__(self, title: str, subtitle: str, color: str, abbrev: str, parent=None):
         super().__init__(parent)
         self._color = color
-        self._setup_ui(icon, title, subtitle)
+        self._setup_ui(title, subtitle, abbrev)
 
-    def _setup_ui(self, icon: str, title: str, subtitle: str):
+    def _setup_ui(self, title: str, subtitle: str, abbrev: str):
         self.setStyleSheet(f"""
             QWidget {{
                 background-color: {BG_TERTIARY};
                 border: 1px solid {BORDER};
+                border-top: 2px solid {self._color};
                 border-radius: 10px;
             }}
         """)
-        
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(6)
@@ -45,37 +45,45 @@ class HardwareCard(QWidget):
         header = QHBoxLayout()
         header.setSpacing(8)
 
-        icon_lbl = QLabel(icon)
-        icon_lbl.setStyleSheet(f"""
-            font-size: 20px;
-            background: transparent;
-            border: none;
+        # Colored abbreviation tag
+        tag = QLabel(abbrev)
+        tag.setFixedWidth(36)
+        tag.setFixedHeight(20)
+        tag.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        tag.setStyleSheet(f"""
+            color: {self._color};
+            background-color: {self._color}1a;
+            border: 1px solid {self._color}33;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
         """)
-        header.addWidget(icon_lbl)
+        header.addWidget(tag)
 
-        title_lbl = QLabel(title)
-        title_lbl.setStyleSheet(f"""
+        self._title_lbl = QLabel(title)
+        self._title_lbl.setStyleSheet(f"""
             color: {TEXT_PRIMARY};
             font-size: 12px;
             font-weight: 700;
             background: transparent;
             border: none;
         """)
-        header.addWidget(title_lbl)
+        header.addWidget(self._title_lbl)
         header.addStretch()
 
-        # "Coming Soon" badge
-        badge = QLabel("Soon")
-        badge.setStyleSheet(f"""
+        # "Soon" badge
+        self._badge = QLabel("Soon")
+        self._badge.setStyleSheet(f"""
             color: {TEXT_DISABLED};
             background-color: {BG_ELEVATED};
             border: 1px solid {BORDER};
-            border-radius: 6px;
+            border-radius: 5px;
             padding: 2px 8px;
             font-size: 9px;
             font-weight: 600;
         """)
-        header.addWidget(badge)
+        header.addWidget(self._badge)
         layout.addLayout(header)
 
         # Value
@@ -92,21 +100,57 @@ class HardwareCard(QWidget):
         # Mini chart placeholder
         self._mini_chart = pg.PlotWidget()
         self._mini_chart.setBackground(QColor(CHART_BG))
-        self._mini_chart.setFixedHeight(50)
+        self._mini_chart.setFixedHeight(46)
         self._mini_chart.hideAxis("bottom")
         self._mini_chart.hideAxis("left")
         self._mini_chart.setMouseEnabled(x=False, y=False)
         self._mini_chart.setMenuEnabled(False)
-        
-        # Draw a flat line as placeholder
+        self._mini_chart.setStyleSheet("border: none; border-radius: 6px;")
+
         import numpy as np
         x = np.linspace(0, 10, 50)
         y = np.zeros(50)
         self._mini_chart.plot(
             x, y,
-            pen=pg.mkPen(color=self._color + "60", width=1.5),
+            pen=pg.mkPen(color=self._color + "50", width=1.5),
         )
+        # Fill area under flat line
+        fill_item = pg.FillBetweenItem(
+            self._mini_chart.getPlotItem().listDataItems()[0],
+            pg.PlotDataItem(x, y - 0.01),
+            brush=pg.mkBrush(QColor(self._color + "18")),
+        )
+        self._mini_chart.addItem(fill_item)
         layout.addWidget(self._mini_chart)
+
+    def refresh_theme(self):
+        """Re-apply inline styles for the current theme."""
+        import ui.theme as t
+        self.setStyleSheet(f"""
+            QWidget {{
+                background-color: {t.BG_TERTIARY};
+                border: 1px solid {t.BORDER};
+                border-top: 2px solid {self._color};
+                border-radius: 10px;
+            }}
+        """)
+        self._title_lbl.setStyleSheet(f"""
+            color: {t.TEXT_PRIMARY};
+            font-size: 12px;
+            font-weight: 700;
+            background: transparent;
+            border: none;
+        """)
+        self._badge.setStyleSheet(f"""
+            color: {t.TEXT_DISABLED};
+            background-color: {t.BG_ELEVATED};
+            border: 1px solid {t.BORDER};
+            border-radius: 5px;
+            padding: 2px 8px;
+            font-size: 9px;
+            font-weight: 600;
+        """)
+        self._mini_chart.setBackground(pg.mkColor(t.CHART_BG))
 
 
 class HardwarePanel(QWidget):
@@ -127,45 +171,73 @@ class HardwarePanel(QWidget):
         layout.setSpacing(0)
 
         # Container
-        container = QWidget()
-        container.setStyleSheet(f"""
+        self._container = QWidget()
+        self._container.setStyleSheet(f"""
             QWidget {{
                 background-color: {BG_SECONDARY};
                 border: 1px solid {BORDER};
                 border-radius: 12px;
             }}
         """)
-        container_layout = QVBoxLayout(container)
+        container_layout = QVBoxLayout(self._container)
         container_layout.setContentsMargins(8, 8, 8, 8)
         container_layout.setSpacing(6)
 
-        # Title
-        title = QLabel("🖥️  Hardware Profiling")
+        # Title row
+        title_row = QWidget()
+        title_row.setStyleSheet("background: transparent; border: none;")
+        title_row_layout = QHBoxLayout(title_row)
+        title_row_layout.setContentsMargins(0, 0, 0, 0)
+        title_row_layout.setSpacing(10)
+
+        accent_bar = QWidget()
+        accent_bar.setFixedSize(3, 18)
+        accent_bar.setStyleSheet(f"background-color: {ACCENT}; border-radius: 2px; border: none;")
+        title_row_layout.addWidget(accent_bar)
+
+        title = QLabel("Hardware Profiling")
         title.setStyleSheet(f"""
             QLabel {{
                 color: {TEXT_PRIMARY};
                 font-size: 14px;
                 font-weight: 700;
-                padding: 4px 8px;
+                padding: 4px 0px;
                 background: transparent;
                 border: none;
             }}
         """)
-        container_layout.addWidget(title)
+        title_row_layout.addWidget(title)
+        title_row_layout.addStretch()
+        container_layout.addWidget(title_row)
 
         # Grid of cards
+        self._cards = []
         grid = QGridLayout()
         grid.setSpacing(8)
 
         cards = [
-            ("🔲", "CPU Usage", "— %", ACCENT, 0, 0),
-            ("💾", "RAM Usage", "— / — GB", ACCENT_SECONDARY, 0, 1),
-            ("🎮", "GPU Usage", "— %", SUCCESS, 1, 0),
-            ("🧵", "Threads", "—", WARNING, 1, 1),
+            ("CPU Usage", "— %", ACCENT, "CPU", 0, 0),
+            ("RAM Usage", "— / — GB", ACCENT_SECONDARY, "MEM", 0, 1),
+            ("GPU Usage", "— %", SUCCESS, "GPU", 1, 0),
+            ("Threads", "—", WARNING, "THR", 1, 1),
         ]
-        for icon, title_text, subtitle, color, row, col in cards:
-            card = HardwareCard(icon, title_text, subtitle, color)
+        for title_text, subtitle, color, abbrev, row, col in cards:
+            card = HardwareCard(title_text, subtitle, color, abbrev)
+            self._cards.append(card)
             grid.addWidget(card, row, col)
 
         container_layout.addLayout(grid)
-        layout.addWidget(container)
+        layout.addWidget(self._container)
+
+    def refresh_theme(self):
+        """Re-apply inline styles for the current theme."""
+        import ui.theme as t
+        self._container.setStyleSheet(f"""
+            QWidget {{
+                background-color: {t.BG_SECONDARY};
+                border: 1px solid {t.BORDER};
+                border-radius: 12px;
+            }}
+        """)
+        for card in self._cards:
+            card.refresh_theme()

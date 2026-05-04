@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout,
     QLabel, QComboBox, QSpinBox, QDoubleSpinBox, QPushButton,
     QProgressBar, QScrollArea, QGroupBox, QLineEdit,
-    QSizePolicy, QMessageBox,
+    QSizePolicy, QMessageBox, QFrame,
 )
 
 from ui.theme import (
@@ -57,20 +57,32 @@ class EnvironmentControls(QWidget):
         layout.setSpacing(0)
 
         # Outer container
-        container = QWidget()
-        container.setStyleSheet(f"""
-            QWidget {{
+        self._container = QWidget()
+        self._container.setObjectName("configContainer")
+        self._container.setStyleSheet(f"""
+            #configContainer {{
                 background-color: {BG_SECONDARY};
                 border: 1px solid {BORDER};
                 border-radius: 12px;
             }}
         """)
-        container_layout = QVBoxLayout(container)
+        container_layout = QVBoxLayout(self._container)
         container_layout.setContentsMargins(12, 8, 12, 12)
         container_layout.setSpacing(8)
 
         # ── Title ──
-        title = QLabel("⚙️  Configuration")
+        title_row = QWidget()
+        title_row.setStyleSheet("background: transparent; border: none;")
+        title_row_layout = QHBoxLayout(title_row)
+        title_row_layout.setContentsMargins(0, 0, 0, 0)
+        title_row_layout.setSpacing(10)
+
+        accent_bar = QFrame()
+        accent_bar.setFixedSize(3, 18)
+        accent_bar.setStyleSheet(f"background-color: {ACCENT_SECONDARY}; border-radius: 2px; border: none;")
+        title_row_layout.addWidget(accent_bar)
+
+        title = QLabel("Configuration")
         title.setStyleSheet(f"""
             QLabel {{
                 color: {TEXT_PRIMARY};
@@ -81,7 +93,9 @@ class EnvironmentControls(QWidget):
                 border: none;
             }}
         """)
-        container_layout.addWidget(title)
+        title_row_layout.addWidget(title)
+        title_row_layout.addStretch()
+        container_layout.addWidget(title_row)
 
         # ── Scrollable content ──
         scroll = QScrollArea()
@@ -195,7 +209,7 @@ class EnvironmentControls(QWidget):
         save_form.addRow("Save Dir:", save_dir_row)
 
         load_row = QHBoxLayout()
-        self._load_btn = QPushButton("📂 Load Model")
+        self._load_btn = QPushButton("Load Model")
         self._load_btn.setMinimumHeight(32)
         self._load_btn.setToolTip("Load a previously saved model")
         load_row.addWidget(self._load_btn)
@@ -206,36 +220,36 @@ class EnvironmentControls(QWidget):
         scroll.setWidget(scroll_content)
         container_layout.addWidget(scroll, 1)
 
-        # ── Action Buttons (fixed at bottom) ──
-        btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(8)
+        # ── Action Buttons — 2×2 grid so labels never get clipped ──
+        btn_grid = QGridLayout()
+        btn_grid.setSpacing(6)
 
-        self._train_btn = QPushButton("▶  Train")
+        self._train_btn = QPushButton("Train")
         self._train_btn.setProperty("cssClass", "primary")
-        self._train_btn.setMinimumHeight(38)
-        self._train_btn.setToolTip("Start training (no render)")
-        btn_layout.addWidget(self._train_btn)
+        self._train_btn.setMinimumHeight(36)
+        self._train_btn.setToolTip("Start training")
+        btn_grid.addWidget(self._train_btn, 0, 0)
 
-        self._stop_btn = QPushButton("⏹  Stop")
+        self._stop_btn = QPushButton("Stop")
         self._stop_btn.setProperty("cssClass", "danger")
-        self._stop_btn.setMinimumHeight(38)
+        self._stop_btn.setMinimumHeight(36)
         self._stop_btn.setEnabled(False)
-        self._stop_btn.setToolTip("Stop training/evaluation")
-        btn_layout.addWidget(self._stop_btn)
+        self._stop_btn.setToolTip("Stop training / evaluation")
+        btn_grid.addWidget(self._stop_btn, 0, 1)
 
-        self._eval_btn = QPushButton("👁  Evaluate")
+        self._eval_btn = QPushButton("Evaluate")
         self._eval_btn.setProperty("cssClass", "success")
-        self._eval_btn.setMinimumHeight(38)
+        self._eval_btn.setMinimumHeight(36)
         self._eval_btn.setEnabled(False)
         self._eval_btn.setToolTip("Run evaluation episodes with rendering")
-        btn_layout.addWidget(self._eval_btn)
+        btn_grid.addWidget(self._eval_btn, 1, 0)
 
-        self._reset_btn = QPushButton("🔄  Reset")
-        self._reset_btn.setMinimumHeight(38)
+        self._reset_btn = QPushButton("Reset")
+        self._reset_btn.setMinimumHeight(36)
         self._reset_btn.setToolTip("Clear model, metrics, and render")
-        btn_layout.addWidget(self._reset_btn)
+        btn_grid.addWidget(self._reset_btn, 1, 1)
 
-        container_layout.addLayout(btn_layout)
+        container_layout.addLayout(btn_grid)
 
         # ── Progress Bar ──
         self._progress_bar = QProgressBar()
@@ -247,7 +261,7 @@ class EnvironmentControls(QWidget):
         container_layout.addWidget(self._progress_bar)
 
         # ── Status ──
-        self._status_label = QLabel("⬤ Idle")
+        self._status_label = QLabel("Idle")
         self._status_label.setStyleSheet(f"""
             color: {TEXT_SECONDARY};
             font-size: 11px;
@@ -258,7 +272,20 @@ class EnvironmentControls(QWidget):
         """)
         container_layout.addWidget(self._status_label)
 
-        layout.addWidget(container)
+        layout.addWidget(self._container)
+
+    # ─── Theme ────────────────────────────────────────────────────────
+
+    def refresh_theme(self):
+        """Re-apply inline styles for the current theme."""
+        import ui.theme as t
+        self._container.setStyleSheet(f"""
+            #configContainer {{
+                background-color: {t.BG_SECONDARY};
+                border: 1px solid {t.BORDER};
+                border-radius: 12px;
+            }}
+        """)
 
     # ─── Population ───────────────────────────────────────────────────────────
 
@@ -268,47 +295,54 @@ class EnvironmentControls(QWidget):
         try:
             env_categories = get_environment_list()
             for category, env_ids in env_categories.items():
-                # Add category as a disabled header
-                self._env_combo.addItem(f"── {category} ──")
+                # Category header — disabled, no UserRole data
+                self._env_combo.addItem(f"  {category.upper()}")
                 idx = self._env_combo.count() - 1
-                model = self._env_combo.model()
-                item = model.item(idx)
+                item = self._env_combo.model().item(idx)
                 item.setEnabled(False)
-                
+                item.setData(None, Qt.ItemDataRole.UserRole)
+
                 for env_id in env_ids:
-                    self._env_combo.addItem(f"  {env_id}")
-        except Exception as e:
-            self._env_combo.addItem("CartPole-v1")
-            self._env_combo.addItem("MountainCar-v0")
-            self._env_combo.addItem("Pendulum-v1")
-            self._env_combo.addItem("Acrobot-v1")
-            self._env_combo.addItem("LunarLander-v3")
+                    self._env_combo.addItem(env_id)
+                    self._env_combo.model().item(
+                        self._env_combo.count() - 1
+                    ).setData(env_id, Qt.ItemDataRole.UserRole)
+        except Exception:
+            for env_id in ["CartPole-v1", "MountainCar-v0", "Pendulum-v1",
+                           "Acrobot-v1", "LunarLander-v3"]:
+                self._env_combo.addItem(env_id)
+                self._env_combo.model().item(
+                    self._env_combo.count() - 1
+                ).setData(env_id, Qt.ItemDataRole.UserRole)
 
     def _populate_algorithms(self, env_id: str):
         """Fill the algorithm combo with algorithms compatible with the env."""
         self._algo_combo.clear()
         compatible = get_compatible_algorithms(env_id)
-        
+
         if not compatible:
             self._algo_combo.addItem("No compatible algorithms")
             return
-        
+
         # Group by category
         categories = {}
         for name in compatible:
             cat = ALGORITHM_REGISTRY[name]["category"]
             categories.setdefault(cat, []).append(name)
-        
+
         for cat, algos in categories.items():
-            # Category header
-            self._algo_combo.addItem(f"── {cat} ──")
+            # Category header — disabled, no UserRole data
+            self._algo_combo.addItem(f"  {cat.upper()}")
             idx = self._algo_combo.count() - 1
-            model = self._algo_combo.model()
-            item = model.item(idx)
+            item = self._algo_combo.model().item(idx)
             item.setEnabled(False)
-            
+            item.setData(None, Qt.ItemDataRole.UserRole)
+
             for algo in algos:
-                self._algo_combo.addItem(f"  {algo}")
+                self._algo_combo.addItem(algo)
+                self._algo_combo.model().item(
+                    self._algo_combo.count() - 1
+                ).setData(algo, Qt.ItemDataRole.UserRole)
 
     def _populate_hyperparams(self, algo_name: str):
         """Build hyperparameter input widgets for the selected algorithm."""
@@ -354,13 +388,13 @@ class EnvironmentControls(QWidget):
 
     def get_selected_env_id(self) -> str:
         """Return the currently selected environment ID."""
-        text = self._env_combo.currentText().strip()
-        return text
+        data = self._env_combo.currentData(Qt.ItemDataRole.UserRole)
+        return data or ""
 
     def get_selected_algorithm(self) -> str:
         """Return the currently selected algorithm name."""
-        text = self._algo_combo.currentText().strip()
-        return text
+        data = self._algo_combo.currentData(Qt.ItemDataRole.UserRole)
+        return data or ""
 
     def get_hyperparams(self) -> dict:
         """Return current hyperparameter values from the UI widgets."""
@@ -405,7 +439,7 @@ class EnvironmentControls(QWidget):
             self._algo_combo.setEnabled(True)
             self._progress_bar.setValue(0)
             self._progress_bar.setFormat("Idle")
-            self._status_label.setText("⬤ Idle")
+            self._status_label.setText("Idle")
             self._status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; font-weight: 600; background: transparent; border: none;")
 
         elif state == "training":
@@ -415,8 +449,8 @@ class EnvironmentControls(QWidget):
             self._reset_btn.setEnabled(False)
             self._env_combo.setEnabled(False)
             self._algo_combo.setEnabled(False)
-            self._progress_bar.setFormat("Training... %p%")
-            self._status_label.setText("⬤ Training in progress")
+            self._progress_bar.setFormat("Training...  %p%")
+            self._status_label.setText("Training in progress")
             self._status_label.setStyleSheet(f"color: {WARNING}; font-size: 11px; font-weight: 600; background: transparent; border: none;")
 
         elif state == "evaluating":
@@ -425,7 +459,7 @@ class EnvironmentControls(QWidget):
             self._eval_btn.setEnabled(False)
             self._reset_btn.setEnabled(False)
             self._progress_bar.setFormat("Evaluating...")
-            self._status_label.setText("⬤ Evaluating agent")
+            self._status_label.setText("Evaluating agent")
             self._status_label.setStyleSheet(f"color: {ACCENT_SECONDARY}; font-size: 11px; font-weight: 600; background: transparent; border: none;")
 
         elif state == "done":
@@ -436,8 +470,8 @@ class EnvironmentControls(QWidget):
             self._env_combo.setEnabled(True)
             self._algo_combo.setEnabled(True)
             self._progress_bar.setValue(100)
-            self._progress_bar.setFormat("Done ✓")
-            self._status_label.setText("⬤ Done — ready to evaluate")
+            self._progress_bar.setFormat("Done")
+            self._status_label.setText("Done — ready to evaluate")
             self._status_label.setStyleSheet(f"color: {SUCCESS}; font-size: 11px; font-weight: 600; background: transparent; border: none;")
 
         elif state == "error":
@@ -448,8 +482,8 @@ class EnvironmentControls(QWidget):
             self._env_combo.setEnabled(True)
             self._algo_combo.setEnabled(True)
             self._progress_bar.setValue(0)
-            self._progress_bar.setFormat("Error!")
-            self._status_label.setText("⬤ Error occurred")
+            self._progress_bar.setFormat("Error")
+            self._status_label.setText("Error occurred")
             self._status_label.setStyleSheet(f"color: {DANGER}; font-size: 11px; font-weight: 600; background: transparent; border: none;")
 
         elif state == "eval_done":
@@ -460,8 +494,8 @@ class EnvironmentControls(QWidget):
             self._env_combo.setEnabled(True)
             self._algo_combo.setEnabled(True)
             self._progress_bar.setValue(100)
-            self._progress_bar.setFormat("Evaluation Complete ✓")
-            self._status_label.setText("⬤ Evaluation complete")
+            self._progress_bar.setFormat("Evaluation Complete")
+            self._status_label.setText("Evaluation complete")
             self._status_label.setStyleSheet(f"color: {SUCCESS}; font-size: 11px; font-weight: 600; background: transparent; border: none;")
 
     def update_progress(self, value: int):
@@ -478,26 +512,26 @@ class EnvironmentControls(QWidget):
         self._eval_btn.clicked.connect(self._on_eval_clicked)
         self._reset_btn.clicked.connect(self._on_reset_clicked)
 
-    def _on_env_changed(self, text: str):
-        env_id = text.strip()
-        if not env_id or env_id.startswith("──"):
+    def _on_env_changed(self, _text: str):
+        env_id = self._env_combo.currentData(Qt.ItemDataRole.UserRole)
+        if not env_id:
             return
-        
+
         # Update action space info
         try:
             space_name = get_action_space_name(env_id)
-            self._env_info_label.setText(f"{space_name}")
+            self._env_info_label.setText(space_name)
         except Exception:
             self._env_info_label.setText("Unknown")
-        
+
         # Update compatible algorithms
         self._populate_algorithms(env_id)
 
-    def _on_algo_changed(self, text: str):
-        algo_name = text.strip()
-        if not algo_name or algo_name.startswith("──"):
+    def _on_algo_changed(self, _text: str):
+        algo_name = self._algo_combo.currentData(Qt.ItemDataRole.UserRole)
+        if not algo_name:
             return
-        
+
         if algo_name in ALGORITHM_REGISTRY:
             meta = ALGORITHM_REGISTRY[algo_name]
             self._algo_info_label.setText(meta.get("description", ""))
@@ -509,12 +543,12 @@ class EnvironmentControls(QWidget):
 
     def _on_train_clicked(self):
         config = self.get_training_config()
-        
-        # Validate
-        if not config["env_id"] or config["env_id"].startswith("──"):
+
+        # Validate — UserRole returns "" for category headers
+        if not config["env_id"]:
             QMessageBox.warning(self, "Invalid Config", "Please select an environment.")
             return
-        if not config["algo_name"] or config["algo_name"].startswith("──"):
+        if not config["algo_name"]:
             QMessageBox.warning(self, "Invalid Config", "Please select an algorithm.")
             return
         
