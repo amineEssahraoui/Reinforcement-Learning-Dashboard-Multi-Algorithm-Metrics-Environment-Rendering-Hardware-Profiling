@@ -177,13 +177,8 @@ class MetricsPanel(QWidget):
 
         # ── Live Stats Row ──
         self._stats_widget = QWidget()
-        self._stats_widget.setStyleSheet(f"""
-            QWidget {{
-                background-color: {BG_ELEVATED};
-                border-radius: 8px;
-                border: 1px solid {BORDER};
-            }}
-        """)
+        # Use centralized QSS via object name
+        self._stats_widget.setObjectName("statsContainer")
         stats_layout = QHBoxLayout(self._stats_widget)
         stats_layout.setContentsMargins(8, 6, 8, 6)
         stats_layout.setSpacing(4)

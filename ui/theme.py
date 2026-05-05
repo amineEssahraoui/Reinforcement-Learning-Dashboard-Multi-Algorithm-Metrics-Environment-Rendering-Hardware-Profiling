@@ -326,16 +326,15 @@ def get_stylesheet() -> str:
         height: 0;
     }}
 
-    /* ── Push Button ───────────────────────────────────────────────── */
+    /* ── Push Button Base ──────────────────────────────────────────── */
     QPushButton {{
         background-color: {BG_ELEVATED};
         color: {TEXT_PRIMARY};
         border: 1px solid {BORDER};
-        border-radius: 8px;
-        padding: 8px 20px;
+        border-radius: 6px;
+        padding: 6px 16px;
         font-weight: 600;
-        font-size: {FONT_SIZE_MD};
-        min-height: 20px;
+        min-height: 28px;
     }}
     QPushButton:hover {{
         background-color: {BG_TERTIARY};
@@ -343,72 +342,40 @@ def get_stylesheet() -> str:
         color: white;
     }}
     QPushButton:pressed {{
-        background-color: {ACCENT_PRESSED};
-        border-color: {ACCENT};
-    }}
-    QPushButton:disabled {{
-        background-color: {BG_SECONDARY};
-        color: {TEXT_DISABLED};
-        border-color: {BORDER};
+        background-color: {ACCENT};
     }}
 
-    /* ── Primary Button ────────────────────────────────────────────── */
-    QPushButton[cssClass="primary"] {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 {ACCENT}, stop:1 {ACCENT_HOVER});
+    /* ── Action Buttons (Train, Stop, Eval) ────────────────────────── */
+    QPushButton#primaryButton {{
+        background-color: {ACCENT};
         color: white;
         border: none;
     }}
-    QPushButton[cssClass="primary"]:hover {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 {ACCENT_HOVER}, stop:1 #9180f5);
+    QPushButton#primaryButton:hover {{
+        background-color: {ACCENT_HOVER};
     }}
-    QPushButton[cssClass="primary"]:pressed {{
-        background-color: {ACCENT_PRESSED};
-    }}
-
-    /* ── Danger Button ─────────────────────────────────────────────── */
-    QPushButton[cssClass="danger"] {{
+    QPushButton#dangerButton {{
         background-color: {DANGER};
         color: white;
         border: none;
     }}
-    QPushButton[cssClass="danger"]:hover {{
-        background-color: #eb816a;
-    }}
-    QPushButton[cssClass="danger"]:pressed {{
-        background-color: #c9604a;
-    }}
-
-    /* ── Success Button ────────────────────────────────────────────── */
-    QPushButton[cssClass="success"] {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 {SUCCESS}, stop:1 #00d4a8);
+    QPushButton#successButton {{
+        background-color: {SUCCESS};
         color: white;
         border: none;
     }}
-    QPushButton[cssClass="success"]:hover {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 #00d4a8, stop:1 #00e8b8);
-    }}
 
-    /* ── Progress Bar ──────────────────────────────────────────────── */
-    QProgressBar {{
-        background-color: {BG_SECONDARY};
+    /* ── Toggle Bar ────────────────────────────────── */
+    QPushButton#toggleBar {{
+        background-color: {BG_TERTIARY};
+        color: {TEXT_SECONDARY};
         border: 1px solid {BORDER};
-        border-radius: 6px;
-        text-align: center;
-        color: {TEXT_PRIMARY};
-        font-weight: 600;
-        font-size: {FONT_SIZE_SM};
-        min-height: 18px;
+        border-radius: 4px;
+        font-size: 14px;
     }}
-    QProgressBar::chunk {{
-        background: qlineargradient(
-            x1:0, y1:0, x2:1, y2:0,
-            stop:0 {ACCENT}, stop:0.5 {ACCENT_HOVER}, stop:1 {ACCENT_SECONDARY}
-        );
-        border-radius: 5px;
+    QPushButton#toggleBar:hover {{
+        background-color: {ACCENT};
+        color: white;
     }}
 
     /* ── Line Edit ─────────────────────────────────────────────────── */
@@ -491,5 +458,53 @@ def get_stylesheet() -> str:
         );
         border: 1px solid {BORDER};
         border-radius: 12px;
+    }}
+
+    /* ── Centralized Button + Container Overrides (additional) ── */
+    QPushButton {{
+        border-radius: 6px;
+        padding: 6px 16px;
+        min-height: 28px;
+        border: 1px solid {BORDER};
+        background-color: {BG_ELEVATED};
+        color: {TEXT_PRIMARY};
+        font-weight: 600;
+    }}
+    QPushButton:hover {{
+        background-color: {BG_TERTIARY};
+        border-color: {ACCENT};
+        color: white;
+    }}
+
+    /* Action button ids */
+    QPushButton#primaryButton {{
+        background-color: {ACCENT};
+        color: white;
+        border: 1px solid {BORDER};
+    }}
+    QPushButton#primaryButton:hover {{
+        background-color: {ACCENT_HOVER};
+    }}
+    QPushButton#dangerButton {{
+        background-color: {DANGER};
+        color: white;
+        border: 1px solid {BORDER};
+    }}
+    QPushButton#successButton {{
+        background-color: {SUCCESS};
+        color: white;
+        border: 1px solid {BORDER};
+    }}
+
+    QPushButton#toggleBar {{
+        background-color: {BG_TERTIARY};
+        color: {TEXT_SECONDARY};
+        border: 1px solid {BORDER};
+        border-radius: 4px;
+        font-size: 14px;
+    }}
+    QPushButton#toggleBar:hover {{
+        background-color: {ACCENT};
+        color: white;
     }}
     """
