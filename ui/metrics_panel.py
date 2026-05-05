@@ -1,421 +1,223 @@
 """
-Metrics Panel — real-time pyqtgraph charts for training and evaluation metrics.
-Uses tabbed layout with Training and Evaluation tabs.
+Metrics Panel — real-time pyqtgraph charts.
+Loss chart redesigned with better visibility and auto-ranging.
 """
 
 import numpy as np
 import pyqtgraph as pg
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QFont
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel,
-    QGroupBox, QGridLayout, QSizePolicy,
-)
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QGroupBox, QGridLayout
 
 from ui.theme import (
-    BG_PRIMARY, BG_SECONDARY, BG_TERTIARY, BG_ELEVATED, BORDER,
+    BG_SECONDARY, BG_TERTIARY, BG_ELEVATED, BORDER,
     TEXT_PRIMARY, TEXT_SECONDARY, TEXT_DISABLED,
     ACCENT, ACCENT_SECONDARY, SUCCESS, WARNING, DANGER,
-    CHART_REWARD, CHART_LOSS_POLICY, CHART_LOSS_VALUE,
-    CHART_LOSS_ENTROPY, CHART_EP_LENGTH, CHART_EVAL_BAR,
-    CHART_GRID, CHART_BG, FONT_FAMILY,
+    CHART_REWARD, CHART_LOSS_POLICY, CHART_LOSS_VALUE, CHART_LOSS_ENTROPY,
+    CHART_EP_LENGTH, CHART_EVAL_BAR, CHART_GRID, CHART_BG, FONT_FAMILY,
 )
 
-
-# ── Configure pyqtgraph defaults ─────────────────────────────────────────────
-pg.setConfigOptions(
-    antialias=True,
-    background=QColor(CHART_BG),
-    foreground=QColor(TEXT_SECONDARY),
-)
-
+pg.setConfigOptions(antialias=True, background=QColor(CHART_BG), foreground=QColor(TEXT_SECONDARY))
 
 class MetricsPanel(QWidget):
-    """
-    Tabbed panel for displaying training and evaluation metrics.
-    
-    Tab 1 — Training: reward, loss, episode length charts
-    Tab 2 — Evaluation: bar chart of per-episode rewards + summary stats
-    """
-
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._setup_ui()
         self._init_data_buffers()
-
-    # ─── UI Setup ─────────────────────────────────────────────────────────────
+        self._setup_ui()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-
-        # Container
+        layout.setContentsMargins(0,0,0,0)
         self._container = QWidget()
         self._container.setObjectName("panelContainer")
-        container_layout = QVBoxLayout(self._container)
-        container_layout.setContentsMargins(8, 8, 8, 8)
-        container_layout.setSpacing(6)
+        cont_layout = QVBoxLayout(self._container)
+        cont_layout.setContentsMargins(8,8,8,8)
 
-        # Title row
         title_row = QWidget()
-        title_row.setStyleSheet("background: transparent; border: none;")
-        title_row_layout = QHBoxLayout(title_row)
-        title_row_layout.setContentsMargins(0, 0, 0, 0)
-        title_row_layout.setSpacing(10)
-
-        accent_bar = QWidget()
-        accent_bar.setFixedSize(3, 18)
-        accent_bar.setStyleSheet(f"background-color: {ACCENT}; border-radius: 2px; border: none;")
-        title_row_layout.addWidget(accent_bar)
-
+        title_layout = QHBoxLayout(title_row)
+        accent = QWidget()
+        accent.setFixedSize(3,18)
+        accent.setStyleSheet(f"background:{ACCENT}; border-radius:2px;")
+        title_layout.addWidget(accent)
         title = QLabel("Metrics Analytics")
-        title.setStyleSheet(f"""
-            QLabel {{
-                color: {TEXT_PRIMARY};
-                font-size: 14px;
-                font-weight: 700;
-                padding: 4px 0px;
-                background: transparent;
-                border: none;
-            }}
-        """)
-        title_row_layout.addWidget(title)
-        title_row_layout.addStretch()
-        container_layout.addWidget(title_row)
+        title.setStyleSheet(f"color:{TEXT_PRIMARY}; font-weight:700;")
+        title_layout.addWidget(title)
+        title_layout.addStretch()
+        cont_layout.addWidget(title_row)
 
-        # Tab widget
         self._tab_widget = QTabWidget()
-        container_layout.addWidget(self._tab_widget)
-
-        # Training tab
-        training_tab = QWidget()
-        training_tab.setStyleSheet("background: transparent; border: none;")
-        self._setup_training_tab(training_tab)
-        self._tab_widget.addTab(training_tab, "Training")
-
-        # Evaluation tab
-        eval_tab = QWidget()
-        eval_tab.setStyleSheet("background: transparent; border: none;")
-        self._setup_evaluation_tab(eval_tab)
-        self._tab_widget.addTab(eval_tab, "Evaluation")
-
+        self._setup_training_tab()
+        self._setup_evaluation_tab()
+        cont_layout.addWidget(self._tab_widget)
         layout.addWidget(self._container)
 
-    def _create_plot_widget(self, title: str, y_label: str) -> pg.PlotWidget:
-        """Create a styled PlotWidget."""
+    def _create_plot(self, title, ylabel):
         pw = pg.PlotWidget()
         pw.setBackground(QColor(CHART_BG))
-        pw.showGrid(x=True, y=True, alpha=0.15)
+        pw.showGrid(x=True, y=True, alpha=0.2)
         pw.setTitle(title, color=TEXT_PRIMARY, size="11pt")
-        pw.setLabel("bottom", "Timesteps", color=TEXT_SECONDARY, units=None)
-        pw.setLabel("left", y_label, color=TEXT_SECONDARY, units=None)
-        pw.setMinimumHeight(160)
-        sp = pw.sizePolicy()
-        sp.setVerticalPolicy(QSizePolicy.Policy.Expanding)
-        pw.setSizePolicy(sp)
-        
-        # Style the axes
-        for axis_name in ["bottom", "left"]:
-            axis = pw.getPlotItem().getAxis(axis_name)
-            axis.setPen(pg.mkPen(color=CHART_GRID, width=1))
-            axis.setTextPen(pg.mkPen(color=TEXT_SECONDARY))
-        
+        pw.setLabel("bottom", "Timesteps", color=TEXT_SECONDARY)
+        pw.setLabel("left", ylabel, color=TEXT_SECONDARY)
+        pw.setMinimumHeight(180)
+        for axis in ("bottom", "left"):
+            ax = pw.getPlotItem().getAxis(axis)
+            ax.setPen(pg.mkPen(color=CHART_GRID))
+            ax.setTextPen(pg.mkPen(color=TEXT_SECONDARY))
         return pw
 
-    def _setup_training_tab(self, parent: QWidget):
-        layout = QVBoxLayout(parent)
-        layout.setContentsMargins(4, 4, 4, 4)
+    def _setup_training_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
         layout.setSpacing(6)
 
-        # ── Reward Chart ──
-        self._reward_plot = self._create_plot_widget("Episode Reward", "Reward")
-        self._reward_line = self._reward_plot.plot(
-            pen=pg.mkPen(color=CHART_REWARD, width=2),
-            name="ep_rew_mean",
-        )
-        # Fill under curve
-        self._reward_fill = pg.FillBetweenItem(
-            self._reward_line,
-            pg.PlotDataItem([0], [0]),
-            brush=pg.mkBrush(QColor(CHART_REWARD + "30")),
-        )
-        self._reward_plot.addItem(self._reward_fill)
+        # Reward
+        self._reward_plot = self._create_plot("Episode Reward", "Reward")
+        self._reward_line = self._reward_plot.plot(pen=pg.mkPen(color=CHART_REWARD, width=2.5))
         layout.addWidget(self._reward_plot, 3)
 
-        # ── Loss Chart ──
-        self._loss_plot = self._create_plot_widget("Training Loss", "Loss")
+        # Loss - amélioré : lignes plus épaisses, auto-range, légende
+        self._loss_plot = self._create_plot("Training Loss", "Loss")
         self._loss_lines = {}
-        loss_configs = [
+        loss_config = [
             ("policy_gradient_loss", CHART_LOSS_POLICY, "Policy Loss"),
             ("value_loss", CHART_LOSS_VALUE, "Value Loss"),
-            ("entropy_loss", CHART_LOSS_ENTROPY, "Entropy Loss"),
-            ("loss", DANGER, "Total Loss"),
+            ("entropy_loss", CHART_LOSS_ENTROPY, "Entropy"),
             ("actor_loss", CHART_LOSS_POLICY, "Actor Loss"),
             ("critic_loss", CHART_LOSS_VALUE, "Critic Loss"),
+            ("loss", DANGER, "Total Loss"),
         ]
-        for key, color, name in loss_configs:
-            line = self._loss_plot.plot(
-                pen=pg.mkPen(color=color, width=1.5),
-                name=name,
-            )
+        for key, col, name in loss_config:
+            line = self._loss_plot.plot(pen=pg.mkPen(color=col, width=2), name=name)
             self._loss_lines[key] = line
-        self._loss_plot.addLegend(
-            offset=(10, 10),
-            labelTextColor=TEXT_SECONDARY,
-            labelTextSize="9pt",
-        )
+        self._loss_plot.addLegend(offset=(10,10), labelTextColor=TEXT_SECONDARY, labelTextSize="9pt")
+        # Auto-range activé
+        self._loss_plot.enableAutoRange(axis=pg.ViewBox.XYAxes)
         layout.addWidget(self._loss_plot, 3)
 
-        # ── Episode Length Chart ──
-        self._ep_len_plot = self._create_plot_widget("Episode Length", "Steps")
-        self._ep_len_line = self._ep_len_plot.plot(
-            pen=pg.mkPen(color=CHART_EP_LENGTH, width=2),
-            name="ep_len_mean",
-        )
+        # Episode length
+        self._ep_len_plot = self._create_plot("Episode Length", "Steps")
+        self._ep_len_line = self._ep_len_plot.plot(pen=pg.mkPen(color=CHART_EP_LENGTH, width=2.5))
         layout.addWidget(self._ep_len_plot, 2)
 
-        # ── Live Stats Row ──
+        # Stats
         self._stats_widget = QWidget()
-        # Use centralized QSS via object name
         self._stats_widget.setObjectName("statsContainer")
         stats_layout = QHBoxLayout(self._stats_widget)
-        stats_layout.setContentsMargins(8, 6, 8, 6)
-        stats_layout.setSpacing(4)
-
+        stats_layout.setContentsMargins(8,6,8,6)
         self._stat_labels = {}
-        stat_items = [
+        for key, label, default, color in [
             ("timesteps", "Timesteps", "0", ACCENT),
             ("fps", "FPS", "0", ACCENT_SECONDARY),
             ("ep_reward", "Reward", "—", SUCCESS),
             ("time", "Elapsed", "0s", WARNING),
-        ]
-        for i, (key, label_text, default_val, color) in enumerate(stat_items):
-            if i > 0:
-                sep = QWidget()
-                sep.setFixedSize(1, 30)
-                sep.setStyleSheet(f"background-color: {BORDER}; border: none;")
-                stats_layout.addWidget(sep)
-
-            stat_container = QWidget()
-            stat_container.setStyleSheet("background: transparent; border: none;")
-            sl = QVBoxLayout(stat_container)
-            sl.setContentsMargins(8, 2, 8, 2)
-            sl.setSpacing(2)
-
-            lbl = QLabel(label_text)
-            lbl.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 10px; font-weight: 600; border: none; letter-spacing: 0.5px;")
-            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            sl.addWidget(lbl)
-
-            val = QLabel(default_val)
-            val.setStyleSheet(f"color: {color}; font-size: 16px; font-weight: 700; border: none;")
-            val.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            sl.addWidget(val)
-
+        ]:
+            container = QWidget()
+            vbox = QVBoxLayout(container)
+            vbox.setContentsMargins(4,2,4,2)
+            lbl = QLabel(label)
+            lbl.setStyleSheet(f"color:{TEXT_SECONDARY}; font-size:10px; font-weight:600;")
+            val = QLabel(default)
+            val.setStyleSheet(f"color:{color}; font-size:16px; font-weight:700;")
+            vbox.addWidget(lbl); vbox.addWidget(val)
             self._stat_labels[key] = val
-            stats_layout.addWidget(stat_container, 1)
-
+            stats_layout.addWidget(container)
         layout.addWidget(self._stats_widget)
+        self._tab_widget.addTab(tab, "Training")
 
-    def _setup_evaluation_tab(self, parent: QWidget):
-        layout = QVBoxLayout(parent)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(8)
-
-        # ── Evaluation Bar Chart ──
+    def _setup_evaluation_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
         self._eval_plot = pg.PlotWidget()
         self._eval_plot.setBackground(QColor(CHART_BG))
-        self._eval_plot.showGrid(x=False, y=True, alpha=0.15)
         self._eval_plot.setTitle("Reward per Episode", color=TEXT_PRIMARY, size="12pt")
-        self._eval_plot.setLabel("bottom", "Episode", color=TEXT_SECONDARY)
-        self._eval_plot.setLabel("left", "Total Reward", color=TEXT_SECONDARY)
-        for axis_name in ["bottom", "left"]:
-            axis = self._eval_plot.getPlotItem().getAxis(axis_name)
-            axis.setPen(pg.mkPen(color=CHART_GRID, width=1))
-            axis.setTextPen(pg.mkPen(color=TEXT_SECONDARY))
-        self._eval_bar_item = pg.BarGraphItem(
-            x=[], height=[], width=0.6,
-            brush=pg.mkBrush(QColor(CHART_EVAL_BAR + "cc")),
-            pen=pg.mkPen(color=CHART_EVAL_BAR, width=1),
-        )
-        self._eval_plot.addItem(self._eval_bar_item)
+        self._eval_plot.setLabel("bottom", "Episode")
+        self._eval_plot.setLabel("left", "Total Reward")
+        self._eval_bar = pg.BarGraphItem(x=[], height=[], width=0.6, brush=pg.mkBrush(QColor(CHART_EVAL_BAR+"cc")), pen=pg.mkPen(color=CHART_EVAL_BAR))
+        self._eval_plot.addItem(self._eval_bar)
         layout.addWidget(self._eval_plot, 3)
 
-        # ── Summary Statistics Card ──
         self._summary_group = QGroupBox("Summary Statistics")
-        self._summary_group.setStyleSheet(f"""
-            QGroupBox {{
-                background-color: {BG_ELEVATED};
-                border: 1px solid {BORDER};
-                border-radius: 10px;
-                margin-top: 18px;
-                padding: 14px 12px 12px 12px;
-                font-weight: 600;
-                color: {TEXT_PRIMARY};
-            }}
-            QGroupBox::title {{
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 3px 12px;
-                color: {TEXT_SECONDARY};
-                font-size: 11px;
-                font-weight: 700;
-            }}
-        """)
-        summary_layout = QGridLayout(self._summary_group)
-        summary_layout.setSpacing(10)
-
-        self._eval_stat_labels = {}
-        eval_stats = [
-            ("mean_reward", "Mean Reward", "—", 0, 0, SUCCESS),
-            ("std_reward", "Std Dev", "—", 0, 1, WARNING),
-            ("min_reward", "Min Reward", "—", 1, 0, DANGER),
-            ("max_reward", "Max Reward", "—", 1, 1, ACCENT_SECONDARY),
-            ("total_episodes", "Episodes", "0", 0, 2, ACCENT),
-            ("mean_length", "Mean Length", "—", 1, 2, TEXT_PRIMARY),
-        ]
-        for key, label_text, default_val, row, col, color in eval_stats:
-            cell = QWidget()
-            cell.setStyleSheet("background: transparent; border: none;")
-            cl = QVBoxLayout(cell)
-            cl.setContentsMargins(4, 4, 4, 4)
-            cl.setSpacing(2)
-            
-            lbl = QLabel(label_text)
-            lbl.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 10px; font-weight: 600; border: none;")
-            cl.addWidget(lbl)
-            
-            val = QLabel(default_val)
-            val.setStyleSheet(f"color: {color}; font-size: 16px; font-weight: 700; border: none;")
-            cl.addWidget(val)
-            
-            self._eval_stat_labels[key] = val
-            summary_layout.addWidget(cell, row, col)
-
+        self._summary_group.setStyleSheet(f"QGroupBox{{background:{BG_ELEVATED}; border:1px solid {BORDER}; border-radius:10px; margin-top:16px;}}")
+        grid = QGridLayout(self._summary_group)
+        self._eval_stats = {}
+        for key, label, row, col, color in [
+            ("mean_reward", "Mean Reward", 0,0, SUCCESS),
+            ("std_reward", "Std Dev", 0,1, WARNING),
+            ("min_reward", "Min Reward", 1,0, DANGER),
+            ("max_reward", "Max Reward", 1,1, ACCENT_SECONDARY),
+            ("total_episodes", "Episodes", 0,2, ACCENT),
+            ("mean_length", "Mean Length", 1,2, TEXT_PRIMARY),
+        ]:
+            w = QWidget()
+            vbox = QVBoxLayout(w)
+            lbl = QLabel(label)
+            lbl.setStyleSheet(f"color:{TEXT_SECONDARY}; font-size:10px;")
+            val = QLabel("—")
+            val.setStyleSheet(f"color:{color}; font-size:14px; font-weight:700;")
+            vbox.addWidget(lbl); vbox.addWidget(val)
+            self._eval_stats[key] = val
+            grid.addWidget(w, row, col)
         layout.addWidget(self._summary_group)
-
-    # ─── Data Buffers ─────────────────────────────────────────────────────────
+        self._tab_widget.addTab(tab, "Evaluation")
 
     def _init_data_buffers(self):
-        """Initialize data arrays for training charts."""
-        self._reward_x = []
-        self._reward_y = []
-        self._ep_len_x = []
-        self._ep_len_y = []
-        self._loss_data = {}  # key -> (x_list, y_list)
-        self._eval_rewards = []
-        self._eval_lengths = []
-
-    # ─── Public API ───────────────────────────────────────────────────────────
+        self._reward_x, self._reward_y = [], []
+        self._ep_len_x, self._ep_len_y = [], []
+        self._loss_data = {}
+        self._eval_rewards, self._eval_lengths = [], []
 
     def update_training_metrics(self, metrics: dict):
-        """
-        Update training charts with new metrics from the DashboardCallback.
-        
-        Args:
-            metrics: dict with keys like timestep, ep_rew_mean, losses, fps, etc.
-        """
-        timestep = metrics.get("timestep", 0)
-
-        # Update reward chart
+        ts = metrics.get("timestep", 0)
         if "ep_rew_mean" in metrics:
-            self._reward_x.append(timestep)
-            self._reward_y.append(metrics["ep_rew_mean"])
-            x = np.array(self._reward_x)
-            y = np.array(self._reward_y)
-            self._reward_line.setData(x, y)
-            # Update fill
-            zero_line = pg.PlotDataItem(x, np.zeros_like(y))
-            self._reward_fill.setCurves(self._reward_line, zero_line)
-
-        # Update episode length chart
+            self._reward_x.append(ts); self._reward_y.append(metrics["ep_rew_mean"])
+            self._reward_line.setData(np.array(self._reward_x), np.array(self._reward_y))
         if "ep_len_mean" in metrics:
-            self._ep_len_x.append(timestep)
-            self._ep_len_y.append(metrics["ep_len_mean"])
-            self._ep_len_line.setData(
-                np.array(self._ep_len_x),
-                np.array(self._ep_len_y),
-            )
-
-        # Update loss charts
+            self._ep_len_x.append(ts); self._ep_len_y.append(metrics["ep_len_mean"])
+            self._ep_len_line.setData(np.array(self._ep_len_x), np.array(self._ep_len_y))
         losses = metrics.get("losses", {})
-        for key, value in losses.items():
-            if key not in self._loss_data:
-                self._loss_data[key] = ([], [])
-            self._loss_data[key][0].append(timestep)
-            self._loss_data[key][1].append(value)
-            if key in self._loss_lines:
-                self._loss_lines[key].setData(
-                    np.array(self._loss_data[key][0]),
-                    np.array(self._loss_data[key][1]),
-                )
-
-        # Update stat labels
-        self._stat_labels["timesteps"].setText(f"{timestep:,}")
-        self._stat_labels["fps"].setText(f"{metrics.get('fps', 0):.0f}")
+        for k, v in losses.items():
+            if k in self._loss_lines:
+                if k not in self._loss_data: self._loss_data[k] = ([], [])
+                self._loss_data[k][0].append(ts); self._loss_data[k][1].append(v)
+                self._loss_lines[k].setData(np.array(self._loss_data[k][0]), np.array(self._loss_data[k][1]))
+        self._stat_labels["timesteps"].setText(f"{ts:,}")
+        self._stat_labels["fps"].setText(f"{metrics.get('fps',0):.0f}")
         if "ep_rew_mean" in metrics:
             self._stat_labels["ep_reward"].setText(f"{metrics['ep_rew_mean']:.2f}")
-        elapsed = metrics.get("time_elapsed", 0)
-        if elapsed >= 3600:
-            self._stat_labels["time"].setText(f"{elapsed/3600:.1f}h")
-        elif elapsed >= 60:
-            self._stat_labels["time"].setText(f"{elapsed/60:.1f}m")
-        else:
-            self._stat_labels["time"].setText(f"{elapsed:.0f}s")
+        et = metrics.get("time_elapsed",0)
+        self._stat_labels["time"].setText(f"{et:.0f}s" if et<60 else f"{et/60:.1f}m" if et<3600 else f"{et/3600:.1f}h")
 
-    def add_eval_episode(self, episode_idx: int, reward: float, length: int):
-        """Add a completed evaluation episode result."""
+    def add_eval_episode(self, idx, reward, length):
         self._eval_rewards.append(reward)
         self._eval_lengths.append(length)
-
-        # Update bar chart
-        x = np.arange(1, len(self._eval_rewards) + 1)
-        heights = np.array(self._eval_rewards)
-        self._eval_bar_item.setOpts(x=x, height=heights, width=0.6)
-
-        # Update summary stats
-        rewards = np.array(self._eval_rewards)
-        lengths = np.array(self._eval_lengths)
-        self._eval_stat_labels["mean_reward"].setText(f"{rewards.mean():.2f}")
-        self._eval_stat_labels["std_reward"].setText(f"{rewards.std():.2f}")
-        self._eval_stat_labels["min_reward"].setText(f"{rewards.min():.2f}")
-        self._eval_stat_labels["max_reward"].setText(f"{rewards.max():.2f}")
-        self._eval_stat_labels["total_episodes"].setText(str(len(self._eval_rewards)))
-        self._eval_stat_labels["mean_length"].setText(f"{lengths.mean():.1f}")
-
-        # Switch to evaluation tab
+        x = np.arange(1, len(self._eval_rewards)+1)
+        self._eval_bar.setOpts(x=x, height=np.array(self._eval_rewards), width=0.6)
+        r = np.array(self._eval_rewards)
+        l = np.array(self._eval_lengths)
+        self._eval_stats["mean_reward"].setText(f"{r.mean():.2f}")
+        self._eval_stats["std_reward"].setText(f"{r.std():.2f}")
+        self._eval_stats["min_reward"].setText(f"{r.min():.2f}")
+        self._eval_stats["max_reward"].setText(f"{r.max():.2f}")
+        self._eval_stats["total_episodes"].setText(str(len(self._eval_rewards)))
+        self._eval_stats["mean_length"].setText(f"{l.mean():.1f}")
         self._tab_widget.setCurrentIndex(1)
 
     def clear_training_data(self):
-        """Clear all training chart data."""
-        self._reward_x.clear()
-        self._reward_y.clear()
-        self._ep_len_x.clear()
-        self._ep_len_y.clear()
+        self._reward_x.clear(); self._reward_y.clear()
+        self._ep_len_x.clear(); self._ep_len_y.clear()
         self._loss_data.clear()
-        
-        self._reward_line.setData([], [])
-        self._ep_len_line.setData([], [])
-        for line in self._loss_lines.values():
-            line.setData([], [])
-        
-        self._stat_labels["timesteps"].setText("0")
-        self._stat_labels["fps"].setText("0")
-        self._stat_labels["ep_reward"].setText("—")
-        self._stat_labels["time"].setText("0s")
+        self._reward_line.setData([],[])
+        self._ep_len_line.setData([],[])
+        for line in self._loss_lines.values(): line.setData([],[])
+        for lbl in self._stat_labels.values(): lbl.setText("0" if lbl == self._stat_labels["timesteps"] else "—")
 
     def clear_eval_data(self):
-        """Clear all evaluation data."""
-        self._eval_rewards.clear()
-        self._eval_lengths.clear()
-        self._eval_bar_item.setOpts(x=[], height=[], width=0.6)
-        for lbl in self._eval_stat_labels.values():
-            lbl.setText("—")
-        self._eval_stat_labels["total_episodes"].setText("0")
+        self._eval_rewards.clear(); self._eval_lengths.clear()
+        self._eval_bar.setOpts(x=[], height=[])
+        for k, lbl in self._eval_stats.items():
+            lbl.setText("0" if k=="total_episodes" else "—")
 
     def clear_all(self):
-        """Clear all data from both tabs."""
         self.clear_training_data()
         self.clear_eval_data()
         self._tab_widget.setCurrentIndex(0)
