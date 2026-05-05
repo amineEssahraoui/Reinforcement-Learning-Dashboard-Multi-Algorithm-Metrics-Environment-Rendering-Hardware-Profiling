@@ -85,6 +85,7 @@ class MainWindow(QMainWindow):
         # ── Header ──
         self._header = QWidget()
         self._header.setFixedHeight(56)
+        self._header.setObjectName("appHeader")
         header_layout = QHBoxLayout(self._header)
         header_layout.setContentsMargins(18, 0, 18, 0)
         header_layout.setSpacing(0)
@@ -122,7 +123,6 @@ class MainWindow(QMainWindow):
         self._version_badge = QLabel("v1.0")
         header_layout.addWidget(self._version_badge)
 
-        self._apply_inline_styles()
         main_layout.addWidget(self._header)
         main_layout.addSpacing(8)
 
@@ -189,100 +189,17 @@ class MainWindow(QMainWindow):
     def _toggle_theme(self):
         """Switch between dark and light themes."""
         from PyQt6.QtWidgets import QApplication
+        import ui.theme as _theme
+        
         new_mode = "light" if _theme.get_current_mode() == "dark" else "dark"
         _theme.set_theme(new_mode)
+        
+        # Apply the global stylesheet to the whole app
         QApplication.instance().setStyleSheet(_theme.get_stylesheet())
-        self._apply_inline_styles()
-
-    def _apply_inline_styles(self):
-        """Re-apply all inline widget styles using the current theme tokens."""
-        t = _theme
-        is_dark = t.get_current_mode() == "dark"
-        header_end = "#191c2a" if is_dark else "#eef0fa"
-
-        self._central.setStyleSheet(
-            f"background-color: {t.BG_PRIMARY}; border: none;"
-        )
-        self._header.setStyleSheet(f"""
-            background: qlineargradient(
-                x1:0, y1:0, x2:1, y2:0,
-                stop:0 {t.BG_SECONDARY}, stop:1 {header_end}
-            );
-            border: 1px solid {t.BORDER};
-            border-radius: 12px;
-        """)
-        self._header_accent_bar.setStyleSheet(f"""
-            background: qlineargradient(
-                x1:0, y1:0, x2:0, y2:1,
-                stop:0 {t.ACCENT}, stop:1 {t.ACCENT_SECONDARY}
-            );
-            border-radius: 2px;
-            border: none;
-        """)
-        self._app_title.setStyleSheet(f"""
-            color: {t.TEXT_PRIMARY};
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            background: transparent;
-            border: none;
-        """)
-        self._header_divider.setStyleSheet(
-            f"background-color: {t.BORDER}; border: none;"
-        )
-        self._subtitle_label.setStyleSheet(f"""
-            color: {t.TEXT_SECONDARY};
-            font-size: 12px;
-            font-weight: 400;
-            background: transparent;
-            border: none;
-        """)
-        self._theme_btn.setText("Light Mode" if is_dark else "Dark Mode")
-        self._theme_btn.setStyleSheet(f"""
-            QPushButton {{
-                color: {t.TEXT_SECONDARY};
-                background-color: {t.BG_TERTIARY};
-                border: 1px solid {t.BORDER};
-                border-radius: 6px;
-                padding: 4px 14px;
-                font-size: 11px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{
-                color: {t.TEXT_PRIMARY};
-                border-color: {t.ACCENT};
-            }}
-        """)
-        self._version_badge.setStyleSheet(f"""
-            color: {t.ACCENT};
-            background-color: {t.ACCENT}1a;
-            border: 1px solid {t.ACCENT}40;
-            border-radius: 6px;
-            padding: 3px 12px;
-            font-size: 11px;
-            font-weight: 700;
-        """)
-        if hasattr(self, "_splitter"):
-            self._splitter.setStyleSheet(f"""
-                QSplitter::handle {{
-                    background-color: {t.BORDER};
-                    margin: 4px 2px;
-                    border-radius: 1px;
-                }}
-                QSplitter::handle:hover {{
-                    background-color: {t.ACCENT};
-                }}
-            """)
-        # Update panels (guarded for call during construction)
-        if hasattr(self, "_metrics_panel"):
-            self._metrics_panel.refresh_theme()
-        if hasattr(self, "_hardware_panel"):
-            self._hardware_panel.refresh_theme()
-        if hasattr(self, "_controls"):
-            self._controls.refresh_theme()
-        if hasattr(self, "_render_widget"):
-            self._render_widget.refresh_theme()
-
+        
+        # Update the button text
+        self._theme_btn.setText("Light Mode" if new_mode == "dark" else "Dark Mode")
+        
     # ─── Signal Wiring ────────────────────────────────────────────────────────
 
     def _connect_signals(self):

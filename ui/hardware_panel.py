@@ -123,34 +123,6 @@ class HardwareCard(QWidget):
         self._mini_chart.addItem(fill_item)
         layout.addWidget(self._mini_chart)
 
-    def refresh_theme(self):
-        """Re-apply inline styles for the current theme."""
-        import ui.theme as t
-        self.setStyleSheet(f"""
-            QWidget {{
-                background-color: {t.BG_TERTIARY};
-                border: 1px solid {t.BORDER};
-                border-top: 2px solid {self._color};
-                border-radius: 10px;
-            }}
-        """)
-        self._title_lbl.setStyleSheet(f"""
-            color: {t.TEXT_PRIMARY};
-            font-size: 12px;
-            font-weight: 700;
-            background: transparent;
-            border: none;
-        """)
-        self._badge.setStyleSheet(f"""
-            color: {t.TEXT_DISABLED};
-            background-color: {t.BG_ELEVATED};
-            border: 1px solid {t.BORDER};
-            border-radius: 5px;
-            padding: 2px 8px;
-            font-size: 9px;
-            font-weight: 600;
-        """)
-        self._mini_chart.setBackground(pg.mkColor(t.CHART_BG))
 
 
 class HardwarePanel(QWidget):
@@ -172,13 +144,7 @@ class HardwarePanel(QWidget):
 
         # Container
         self._container = QWidget()
-        self._container.setStyleSheet(f"""
-            QWidget {{
-                background-color: {BG_SECONDARY};
-                border: 1px solid {BORDER};
-                border-radius: 12px;
-            }}
-        """)
+        self._container.setObjectName("panelContainer")
         container_layout = QVBoxLayout(self._container)
         container_layout.setContentsMargins(8, 8, 8, 8)
         container_layout.setSpacing(6)
@@ -228,16 +194,3 @@ class HardwarePanel(QWidget):
 
         container_layout.addLayout(grid)
         layout.addWidget(self._container)
-
-    def refresh_theme(self):
-        """Re-apply inline styles for the current theme."""
-        import ui.theme as t
-        self._container.setStyleSheet(f"""
-            QWidget {{
-                background-color: {t.BG_SECONDARY};
-                border: 1px solid {t.BORDER};
-                border-radius: 12px;
-            }}
-        """)
-        for card in self._cards:
-            card.refresh_theme()

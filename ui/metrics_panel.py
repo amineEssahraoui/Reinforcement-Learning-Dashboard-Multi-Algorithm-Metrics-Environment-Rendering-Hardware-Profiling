@@ -52,13 +52,7 @@ class MetricsPanel(QWidget):
 
         # Container
         self._container = QWidget()
-        self._container.setStyleSheet(f"""
-            QWidget {{
-                background-color: {BG_SECONDARY};
-                border: 1px solid {BORDER};
-                border-radius: 12px;
-            }}
-        """)
+        self._container.setObjectName("panelContainer")
         container_layout = QVBoxLayout(self._container)
         container_layout.setContentsMargins(8, 8, 8, 8)
         container_layout.setSpacing(6)
@@ -305,61 +299,6 @@ class MetricsPanel(QWidget):
             summary_layout.addWidget(cell, row, col)
 
         layout.addWidget(self._summary_group)
-
-    # ─── Theme ────────────────────────────────────────────────────────────────
-
-    def refresh_theme(self):
-        """Re-apply all inline styles to match the current theme."""
-        import ui.theme as t
-
-        self._container.setStyleSheet(f"""
-            QWidget {{
-                background-color: {t.BG_SECONDARY};
-                border: 1px solid {t.BORDER};
-                border-radius: 12px;
-            }}
-        """)
-        self._stats_widget.setStyleSheet(f"""
-            QWidget {{
-                background-color: {t.BG_ELEVATED};
-                border-radius: 8px;
-                border: 1px solid {t.BORDER};
-            }}
-        """)
-        self._summary_group.setStyleSheet(f"""
-            QGroupBox {{
-                background-color: {t.BG_ELEVATED};
-                border: 1px solid {t.BORDER};
-                border-radius: 10px;
-                margin-top: 18px;
-                padding: 14px 12px 12px 12px;
-                font-weight: 600;
-                color: {t.TEXT_PRIMARY};
-            }}
-            QGroupBox::title {{
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 3px 12px;
-                color: {t.TEXT_SECONDARY};
-                font-size: 11px;
-                font-weight: 700;
-            }}
-        """)
-        plot_defs = [
-            (self._reward_plot,  "Episode Reward",      "Reward",       "Timesteps", "11pt"),
-            (self._loss_plot,    "Training Loss",       "Loss",         "Timesteps", "11pt"),
-            (self._ep_len_plot,  "Episode Length",      "Steps",        "Timesteps", "11pt"),
-            (self._eval_plot,    "Reward per Episode",  "Total Reward", "Episode",   "12pt"),
-        ]
-        for plot, title, ylabel, xlabel, size in plot_defs:
-            plot.setBackground(pg.mkColor(t.CHART_BG))
-            plot.setTitle(title, color=t.TEXT_PRIMARY, size=size)
-            plot.setLabel("bottom", xlabel, color=t.TEXT_SECONDARY, units=None)
-            plot.setLabel("left", ylabel, color=t.TEXT_SECONDARY, units=None)
-            for axis_name in ["bottom", "left"]:
-                axis = plot.getPlotItem().getAxis(axis_name)
-                axis.setPen(pg.mkPen(color=t.CHART_GRID, width=1))
-                axis.setTextPen(pg.mkPen(color=t.TEXT_SECONDARY))
 
     # ─── Data Buffers ─────────────────────────────────────────────────────────
 

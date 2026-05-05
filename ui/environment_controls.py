@@ -59,13 +59,7 @@ class EnvironmentControls(QWidget):
         # Outer container
         self._container = QWidget()
         self._container.setObjectName("configContainer")
-        self._container.setStyleSheet(f"""
-            #configContainer {{
-                background-color: {BG_SECONDARY};
-                border: 1px solid {BORDER};
-                border-radius: 12px;
-            }}
-        """)
+        self._container.setObjectName("panelContainer")
         container_layout = QVBoxLayout(self._container)
         container_layout.setContentsMargins(12, 8, 12, 12)
         container_layout.setSpacing(8)
@@ -274,18 +268,6 @@ class EnvironmentControls(QWidget):
 
         layout.addWidget(self._container)
 
-    # ─── Theme ────────────────────────────────────────────────────────
-
-    def refresh_theme(self):
-        """Re-apply inline styles for the current theme."""
-        import ui.theme as t
-        self._container.setStyleSheet(f"""
-            #configContainer {{
-                background-color: {t.BG_SECONDARY};
-                border: 1px solid {t.BORDER};
-                border-radius: 12px;
-            }}
-        """)
 
     # ─── Population ───────────────────────────────────────────────────────────
 

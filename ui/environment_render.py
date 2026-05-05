@@ -40,13 +40,7 @@ class EnvironmentRenderWidget(QWidget):
 
         # Container with rounded border
         self._container = QWidget()
-        self._container.setStyleSheet(f"""
-            QWidget {{
-                background-color: {BG_SECONDARY};
-                border: 1px solid {BORDER};
-                border-radius: 12px;
-            }}
-        """)
+        self._container.setObjectName("panelContainer")
         container_layout = QVBoxLayout(self._container)
         container_layout.setContentsMargins(2, 2, 2, 2)
         container_layout.setSpacing(0)
@@ -101,28 +95,6 @@ class EnvironmentRenderWidget(QWidget):
         # Show initial placeholder
         self.show_placeholder("")
 
-    def refresh_theme(self):
-        """Re-apply inline styles for the current theme."""
-        import ui.theme as t
-        self._container.setStyleSheet(f"""
-            QWidget {{
-                background-color: {t.BG_SECONDARY};
-                border: 1px solid {t.BORDER};
-                border-radius: 12px;
-            }}
-        """)
-        self._title_label.setStyleSheet(f"""
-            QLabel {{
-                color: {t.TEXT_PRIMARY};
-                font-size: 14px;
-                font-weight: 700;
-                background-color: transparent;
-                border: none;
-            }}
-        """)
-        if self._has_frame:
-            return
-        self.show_placeholder(self._env_name)
 
     def show_placeholder(self, env_name: str = ""):
         """Show a styled placeholder when no frames are being displayed."""
