@@ -472,4 +472,24 @@ def get_stylesheet() -> str:
         color: {TEXT_SECONDARY};
         font-size: {FONT_SIZE_SM};
     }}
+
+    /* ── Custom Containers & Headers ───────────────────────────────── */
+    #panelContainer {{
+        background-color: {BG_SECONDARY};
+        border: 1px solid {BORDER};
+        border-radius: 12px;
+    }}
+    #statsContainer {{
+        background-color: {BG_ELEVATED};
+        border-radius: 8px;
+        border: 1px solid {BORDER};
+    }}
+    #appHeader {{
+        background: qlineargradient(
+            x1:0, y1:0, x2:1, y2:0,
+            stop:0 {BG_SECONDARY}, stop:1 {BG_PRIMARY}
+        );
+        border: 1px solid {BORDER};
+        border-radius: 12px;
+    }}
     """
