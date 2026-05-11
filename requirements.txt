@@ -5,3 +5,8 @@ stable-baselines3>=2.3
 sb3-contrib>=2.3
 numpy
 torch
+langchain 
+langchain-community 
+langchain-huggingface 
+faiss-cpu 
+sentence-transformers
