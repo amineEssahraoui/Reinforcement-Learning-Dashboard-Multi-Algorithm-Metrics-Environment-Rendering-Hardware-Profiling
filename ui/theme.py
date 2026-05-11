@@ -1,245 +1,152 @@
-"""
-Dark/Light theme configuration for the RL Dashboard.
-Colors improved for better contrast and professional look.
-"""
+from PyQt6.QtWidgets import QApplication
 
-# ─── Color Tokens (dark mode default) ──────────────────────────────────────
-
-BG_PRIMARY = "#0a0c12"
-BG_SECONDARY = "#12141c"
-BG_TERTIARY = "#1a1d2b"
-BG_ELEVATED = "#25293a"
-BG_CARD = "#1e212f"
-
-ACCENT = "#7c3aed"
-ACCENT_HOVER = "#8b5cf6"
-ACCENT_PRESSED = "#6d28d9"
-ACCENT_SECONDARY = "#06b6d4"
-ACCENT_SECONDARY_HOVER = "#22d3ee"
-
-SUCCESS = "#10b981"
-WARNING = "#f59e0b"
-DANGER = "#ef4444"
-
-TEXT_PRIMARY = "#f3f4f6"
-TEXT_SECONDARY = "#9ca3af"
-TEXT_DISABLED = "#4b5563"
-
-BORDER = "#2d313e"
-BORDER_FOCUS = "#7c3aed"
-
-# Chart colors – plus distincts et visibles
-CHART_REWARD = "#8b5cf6"
-CHART_LOSS_POLICY = "#f97316"
-CHART_LOSS_VALUE = "#facc15"
-CHART_LOSS_ENTROPY = "#2dd4bf"
-CHART_EP_LENGTH = "#10b981"
-CHART_EVAL_BAR = "#8b5cf6"
-CHART_GRID = "#374151"
-CHART_BG = "#0f111a"
-
-# ─── Font ─────────────────────────────────────────────────────────────────────
-
-FONT_FAMILY = "Segoe UI, Inter, Roboto, sans-serif"
-FONT_SIZE_SM = "11px"
-FONT_SIZE_MD = "13px"
-FONT_SIZE_LG = "16px"
-FONT_SIZE_XL = "22px"
-FONT_SIZE_TITLE = "28px"
-
-# ─── Theme Registry ──────────────────────────────────────────────────────────
-
-_THEME_PALETTE: dict = {
+_THEME_PALETTES = {
     "dark": {
-        "BG_PRIMARY":     "#0a0c12",
-        "BG_SECONDARY":   "#12141c",
-        "BG_TERTIARY":    "#1a1d2b",
-        "BG_ELEVATED":    "#25293a",
-        "BG_CARD":        "#1e212f",
-        "TEXT_PRIMARY":   "#f3f4f6",
-        "TEXT_SECONDARY": "#9ca3af",
-        "TEXT_DISABLED":  "#4b5563",
-        "BORDER":         "#2d313e",
-        "CHART_BG":       "#0f111a",
-        "CHART_GRID":     "#374151",
+        "bg_app": "#18181B",
+        "bg_surface": "#27272A",
+        "bg_hover": "#3F3F46",
+        "border": "#3F3F46",
+        "text_main": "#F4F4F5",
+        "text_muted": "#A1A1AA",
+        "accent": "#6366F1",
+        "accent_hover": "#4F46E5",
+        "chart_reward": "#10B981",
+        "chart_loss": "#F43F5E",
+        "chart_len": "#0EA5E9",
+        "chart_cpu": "#8B5CF6",
+        "chart_ram": "#F59E0B",
+        "btn_stop": "#EF4444",
+        "btn_eval": "#0EA5E9",
     },
     "light": {
-        "BG_PRIMARY":     "#f8fafc",
-        "BG_SECONDARY":   "#ffffff",
-        "BG_TERTIARY":    "#f1f5f9",
-        "BG_ELEVATED":    "#e2e8f0",
-        "BG_CARD":        "#f1f5f9",
-        "TEXT_PRIMARY":   "#0f172a",
-        "TEXT_SECONDARY": "#334155",
-        "TEXT_DISABLED":  "#94a3b8",
-        "BORDER":         "#cbd5e1",
-        "CHART_BG":       "#f8fafc",
-        "CHART_GRID":     "#e2e8f0",
+        "bg_app": "#F4F4F5",
+        "bg_surface": "#FFFFFF",
+        "bg_hover": "#E4E4E7",
+        "border": "#D4D4D8",
+        "text_main": "#18181B",
+        "text_muted": "#52525B",
+        "accent": "#4F46E5",
+        "accent_hover": "#4338CA",
+        "chart_reward": "#059669",
+        "chart_loss": "#E11D48",
+        "chart_len": "#0284C7",
+        "chart_cpu": "#7C3AED",
+        "chart_ram": "#D97706",
+        "btn_stop": "#DC2626",
+        "btn_eval": "#0284C7",
     },
 }
 
-_current_mode: str = "dark"
+_current_mode = "dark"
+COLORS = dict(_THEME_PALETTES[_current_mode])
 
-def set_theme(mode: str) -> None:
+def get_pyqtgraph_color(key: str) -> str:
+    return COLORS.get(key, "#FFFFFF")
+
+
+def set_theme(mode: str):
     global _current_mode
-    if mode not in _THEME_PALETTE:
-        raise ValueError(f"Unknown theme: {mode!r}. Choose 'dark' or 'light'.")
+    if mode not in _THEME_PALETTES:
+        return
     _current_mode = mode
-    palette = _THEME_PALETTE[mode]
-    g = globals()
-    for key, value in palette.items():
-        g[key] = value
+    COLORS.clear()
+    COLORS.update(_THEME_PALETTES[mode])
+
 
 def get_current_mode() -> str:
     return _current_mode
 
-# ─── Global Stylesheet ───────────────────────────────────────────────────────
+
+def toggle_theme() -> str:
+    new_mode = "light" if _current_mode == "dark" else "dark"
+    set_theme(new_mode)
+    return new_mode
 
 def get_stylesheet() -> str:
     return f"""
-    /* Global */
-    QMainWindow, QWidget {{
-        background-color: {BG_PRIMARY};
-        color: {TEXT_PRIMARY};
-        font-family: {FONT_FAMILY};
-        font-size: {FONT_SIZE_MD};
-    }}
+        QWidget {{
+            background-color: {COLORS["bg_app"]};
+            color: {COLORS["text_main"]};
+            font-family: "Segoe UI", "San Francisco", "Helvetica Neue", sans-serif;
+            font-size: 12px;
+        }}
+        
+        #MetricsPanel, #RenderPanel {{
+            background-color: {COLORS["bg_surface"]};
+            border-radius: 8px;
+            border: 1px solid {COLORS["border"]};
+        }}
+        
+        #HeaderBar {{
+            background-color: {COLORS["bg_surface"]};
+            border-bottom: 1px solid {COLORS["border"]};
+        }}
+        
+        QPushButton {{
+            background-color: {COLORS["bg_surface"]};
+            border: 1px solid {COLORS["border"]};
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: {COLORS["text_muted"]};
+            font-weight: 500;
+        }}
+        QPushButton:hover {{
+            background-color: {COLORS["bg_hover"]};
+            color: {COLORS["text_main"]};
+        }}
+        QPushButton:checked {{
+            background-color: {COLORS["accent"]};
+            color: #FFFFFF;
+            border: 1px solid {COLORS["accent"]};
+        }}
 
-    /* Scroll areas */
-    QScrollArea {{
-        border: none;
-        background: transparent;
-    }}
-    QScrollBar:vertical {{
-        background: {BG_SECONDARY};
-        width: 8px;
-        border-radius: 4px;
-    }}
-    QScrollBar::handle:vertical {{
-        background: {BG_TERTIARY};
-        border-radius: 4px;
-        min-height: 30px;
-    }}
-    QScrollBar::handle:vertical:hover {{
-        background: {ACCENT};
-    }}
-
-    /* Splitter */
-    QSplitter::handle {{
-        background: {BORDER};
-        width: 2px;
-    }}
-    QSplitter::handle:hover {{
-        background: {ACCENT};
-    }}
-
-    /* TabWidget */
-    QTabWidget::pane {{
-        border: 1px solid {BORDER};
-        border-top: none;
-        border-radius: 10px;
-        background: {BG_SECONDARY};
-    }}
-    QTabBar::tab {{
-        background: transparent;
-        color: {TEXT_SECONDARY};
-        padding: 8px 20px;
-        border-bottom: 2px solid transparent;
-        font-weight: 600;
-    }}
-    QTabBar::tab:selected {{
-        color: {ACCENT};
-        border-bottom: 2px solid {ACCENT};
-    }}
-    QTabBar::tab:hover:!selected {{
-        color: {TEXT_PRIMARY};
-        border-bottom: 2px solid {BORDER};
-    }}
-
-    /* GroupBox */
-    QGroupBox {{
-        background: {BG_TERTIARY};
-        border: 1px solid {BORDER};
-        border-radius: 10px;
-        margin-top: 16px;
-        padding-top: 12px;
-    }}
-    QGroupBox::title {{
-        color: {TEXT_SECONDARY};
-        font-size: {FONT_SIZE_SM};
-        font-weight: 700;
-        left: 12px;
-        padding: 0 8px;
-    }}
-
-    /* ComboBox, SpinBox, LineEdit */
-    QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit {{
-        background: {BG_TERTIARY};
-        color: {TEXT_PRIMARY};
-        border: 1px solid {BORDER};
-        border-radius: 8px;
-        padding: 6px 10px;
-        min-height: 28px;
-    }}
-    QComboBox:hover, QSpinBox:hover, QDoubleSpinBox:hover, QLineEdit:hover {{
-        border-color: {ACCENT};
-    }}
-    QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus, QLineEdit:focus {{
-        border-color: {ACCENT};
-    }}
-
-    /* Buttons */
-    QPushButton {{
-        background: {BG_ELEVATED};
-        color: {TEXT_PRIMARY};
-        border: 1px solid {BORDER};
-        border-radius: 8px;
-        padding: 6px 16px;
-        font-weight: 600;
-    }}
-    QPushButton:hover {{
-        background: {BG_TERTIARY};
-        border-color: {ACCENT};
-    }}
-    QPushButton:pressed {{
-        background: {ACCENT};
-        color: white;
-    }}
-
-    QPushButton#primaryButton {{
-        background: {ACCENT};
-        color: white;
-        border: none;
-    }}
-    QPushButton#primaryButton:hover {{
-        background: {ACCENT_HOVER};
-    }}
-    QPushButton#dangerButton {{
-        background: {DANGER};
-        color: white;
-        border: none;
-    }}
-    QPushButton#successButton {{
-        background: {SUCCESS};
-        color: white;
-        border: none;
-    }}
-
-    /* Custom containers */
-    #panelContainer {{
-        background: {BG_SECONDARY};
-        border: 1px solid {BORDER};
-        border-radius: 16px;
-    }}
-    #statsContainer {{
-        background: {BG_ELEVATED};
-        border-radius: 12px;
-        border: 1px solid {BORDER};
-    }}
-    #appHeader {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 {BG_SECONDARY}, stop:1 {BG_PRIMARY});
-        border: 1px solid {BORDER};
-        border-radius: 16px;
-    }}
+        QToolButton {{
+            background-color: {COLORS["bg_surface"]};
+            border: 1px solid {COLORS["border"]};
+            border-radius: 14px;
+            padding: 4px 8px;
+            color: {COLORS["text_main"]};
+        }}
+        QToolButton:hover {{
+            background-color: {COLORS["bg_hover"]};
+        }}
+        
+        /* Boutons d'action spécifiques (avec des classes dynamiques) */
+        QPushButton.btn-primary {{
+            background-color: {COLORS["accent"]};
+            color: white;
+            border: none;
+        }}
+        QPushButton.btn-primary:hover {{ background-color: {COLORS["accent_hover"]}; }}
+        
+        QPushButton.btn-danger {{ background-color: {COLORS["btn_stop"]}; color: white; border: none; }}
+        QPushButton.btn-info {{ background-color: {COLORS["btn_eval"]}; color: white; border: none; }}
+        
+        /* Combobox (Menus déroulants) */
+        QComboBox {{
+            background-color: {COLORS["bg_app"]};
+            border: 1px solid {COLORS["border"]};
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: {COLORS["text_main"]};
+        }}
+        QComboBox::drop-down {{ border: none; }}
+        QComboBox QAbstractItemView {{
+            background-color: {COLORS["bg_surface"]};
+            color: {COLORS["text_main"]};
+            selection-background-color: {COLORS["accent"]};
+        }}
+        
+        #OverlayPopup {{
+            background-color: {COLORS["bg_surface"]};
+            border: 1px solid {COLORS["border"]};
+            border-radius: 8px;
+        }}
+        
+        QSplitter::handle {{
+            background-color: {COLORS["bg_app"]};
+        }}
     """
+
+def apply_theme(app: QApplication):
+    app.setStyleSheet(get_stylesheet())
