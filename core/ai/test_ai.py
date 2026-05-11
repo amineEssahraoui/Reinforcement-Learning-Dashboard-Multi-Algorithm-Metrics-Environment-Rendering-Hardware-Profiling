@@ -20,7 +20,7 @@ def main():
     start_time = time.time()
     
     try:
-        kb = KnowledgeBase(data_dir="core/ai/data")
+        kb = KnowledgeBase()
         retriever = kb.get_retriever(top_k=3)
         print(f"Knowledge base loaded successfully. ({len(kb.vector_store.docstore._dict)} chunks found)")
         
