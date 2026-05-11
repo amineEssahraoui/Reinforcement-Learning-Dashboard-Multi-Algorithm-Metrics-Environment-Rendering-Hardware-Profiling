@@ -1,10 +1,10 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QSplitter, QMessageBox, QApplication
-from PyQt6.QtCore import Qt, QEvent
+from PyQt6.QtCore import Qt
 
 from ui.header_bar import HeaderBar
 from ui.metrics_panel import MetricsPanel
 from ui.environment_render import RenderPanel
-from ui.config_popup_new import ConfigModal
+from ui.config_popup_ import ConfigModal
 from ui.hardware_monitor_modal import HardwareMonitorModal
 from ui import theme
 

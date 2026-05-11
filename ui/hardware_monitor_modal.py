@@ -1,9 +1,3 @@
-"""
-Hardware Monitor Modal Dialog.
-Displays real-time CPU, RAM, and GPU usage with large, separate graphs.
-Modal window with close button.
-"""
-
 import random
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QWidget, QFrame
@@ -31,7 +25,7 @@ class HardwareMonitorModal(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Hardware Monitor")
         self.setModal(True)
-        self.setFixedSize(900, 900)
+        self.setFixedSize(600, 600)
         self.setStyleSheet("""
             QDialog {
                 background-color: #27272A;
@@ -44,7 +38,6 @@ class HardwareMonitorModal(QDialog):
         layout.setContentsMargins(20, 16, 20, 16)
         layout.setSpacing(16)
 
-        # --- Initialize data FIRST (before _create_graph_section calls) ---
         self.timeline = list(range(60))
         self.cpu_history = [0.0] * 60
         self.ram_history = [0.0] * 60
@@ -53,7 +46,6 @@ class HardwareMonitorModal(QDialog):
         self.lbl_ram_value = QLabel("0.0 GB")
         self.lbl_gpu_value = QLabel("0.0%")
 
-        # --- Header with Close Button ---
         header = QHBoxLayout()
         title = QLabel("🖥 Hardware Monitor — Live")
         title.setStyleSheet("font-size: 16px; font-weight: bold; color: #10B981;")
@@ -80,13 +72,11 @@ class HardwareMonitorModal(QDialog):
         header.addWidget(self.btn_close)
         layout.addLayout(header)
 
-        # --- Separator ---
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setStyleSheet("background-color: #3F3F46;")
         layout.addWidget(sep)
 
-        # --- CPU Graph ---
         cpu_section = self._create_graph_section(
             "CPU Usage (%)",
             "chart_len",
@@ -94,7 +84,6 @@ class HardwareMonitorModal(QDialog):
         )
         layout.addWidget(cpu_section)
 
-        # --- RAM Graph ---
         ram_section = self._create_graph_section(
             "RAM Usage (GB / %)",
             "chart_ram",
@@ -102,7 +91,6 @@ class HardwareMonitorModal(QDialog):
         )
         layout.addWidget(ram_section)
 
-        # --- GPU Graph ---
         gpu_section = self._create_graph_section(
             "GPU Usage (%)",
             "chart_reward",
@@ -110,7 +98,6 @@ class HardwareMonitorModal(QDialog):
         )
         layout.addWidget(gpu_section)
 
-        # --- Timer ---
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._poll_hardware)
 
@@ -130,7 +117,7 @@ class HardwareMonitorModal(QDialog):
         # Graph
         color = get_pyqtgraph_color(color_key)
         plot = pg.PlotWidget()
-        plot.setFixedHeight(200)
+        plot.setFixedHeight(150)
         plot.setBackground(None)
         plot.showGrid(x=False, y=True, alpha=0.2)
         plot.setYRange(0, 100)

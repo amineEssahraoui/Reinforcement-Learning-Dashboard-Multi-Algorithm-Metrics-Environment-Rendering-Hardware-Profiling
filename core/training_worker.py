@@ -1,144 +1,93 @@
 import os
-import time
-import gymnasium as gym
+import traceback
 import numpy as np
-from PyQt6.QtCore import QThread, pyqtSignal, QTimer
-from stable_baselines3 import PPO, SAC, TD3, A2C, DQN
-from stable_baselines3.common.callbacks import BaseCallback
-from core.algorithms import import_algorithm_class, ALGORITHM_REGISTRY
+import gymnasium as gym
+from PyQt6.QtCore import QThread, pyqtSignal
 
-class DashboardCallback(BaseCallback):
-    def __init__(self, verbose=0, render_env=False):
-        super().__init__(verbose)
-        self.metrics = []
-        self.last_timestep = 0
-        self.start_time = time.time()
-        self.render_env = render_env
-        self.last_frame_time = 0
-
-    def _on_step(self):
-        t = self.num_timesteps
-        # Collect metrics every ~1000 steps
-        if t - self.last_timestep >= 1000 or self.last_timestep == 0:
-            self.last_timestep = t
-            elapsed = time.time() - self.start_time
-            fps = t / elapsed if elapsed > 0 else 0
-            data = {
-                "timestep": t,
-                "fps": fps,
-                "time_elapsed": elapsed,
-            }
-            if "ep_rew_mean" in self.model.ep_info_buffer:
-                data["ep_rew_mean"] = np.mean([e["r"] for e in self.model.ep_info_buffer])
-                data["ep_len_mean"] = np.mean([e["l"] for e in self.model.ep_info_buffer])
-            # Losses (if available)
-            if hasattr(self.model, "logger") and self.model.logger.name_to_value:
-                losses = {}
-                for key in ["train/policy_gradient_loss", "train/value_loss", "train/entropy_loss",
-                            "train/actor_loss", "train/critic_loss", "train/loss"]:
-                    if key in self.model.logger.name_to_value:
-                        losses[key.split("/")[-1]] = self.model.logger.name_to_value[key]
-                if losses:
-                    data["losses"] = losses
-            self.metrics.append(data)
-            # Émettre via une variable partagée (le worker lira)
-            if hasattr(self, "worker_ref"):
-                self.worker_ref.metrics_queue.append(data)
-
-        # Rendu optionnel
-        if self.render_env and hasattr(self, "worker_ref") and self.worker_ref:
-            now = time.time()
-            if now - self.last_frame_time >= 0.033:  # ~30 fps
-                self.last_frame_time = now
-                try:
-                    # Récupérer la frame RGB depuis l'environnement
-                    if hasattr(self.training_env, "envs") and self.training_env.envs:
-                        env = self.training_env.envs[0]
-                        if hasattr(env, "render_mode") and env.render_mode == "rgb_array":
-                            frame = env.render()
-                            if frame is not None:
-                                self.worker_ref.frame_queue.append(frame)
-                except:
-                    pass
-        return True
+from core.algorithms import create_model, import_algorithm_class
+from core.callbacks import DashboardCallback
 
 class TrainingWorker(QThread):
     metrics_updated = pyqtSignal(dict)
-    progress_updated = pyqtSignal(int)
-    training_complete = pyqtSignal(str)
+    training_finished = pyqtSignal(str)
     training_error = pyqtSignal(str)
     training_stopped = pyqtSignal()
-    frame_ready = pyqtSignal(object)
+    frame_ready = pyqtSignal(np.ndarray) 
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._stop_flag = False
-        self._config = None
-        self.trained_model = None
-        self.metrics_queue = []
-        self.frame_queue = []
-        self._timer = None
+        self.model = None
+        self.env = None
+        self.config = {}
 
-    def configure(self, env_id, algo_name, total_timesteps, seed=None, hyperparams=None, save_dir="saved_models", render=False):
-        self._config = {
-            "env_id": env_id,
+    def configure(self, algo_name: str, env_id: str, total_timesteps: int, seed: int = None, hyperparams: dict = None):
+        self.config = {
             "algo_name": algo_name,
+            "env_id": env_id,
             "total_timesteps": total_timesteps,
             "seed": seed,
-            "hyperparams": hyperparams or {},
-            "save_dir": save_dir,
-            "render": render,
+            "hyperparams": hyperparams or {}
         }
+        self._stop_flag = False
+        self.model = None 
+
+    def load_model(self, algo_name: str, path: str):
+        try:
+            cls = import_algorithm_class(algo_name)
+            self.model = cls.load(path)
+            self.config["algo_name"] = algo_name
+        except Exception as e:
+            self.training_error.emit(f"Erreur lors du chargement : {str(e)}")
 
     def stop(self):
         self._stop_flag = True
 
     def run(self):
-        self._stop_flag = False
-        self.metrics_queue.clear()
-        self.frame_queue.clear()
         try:
-            cfg = self._config
-            if cfg["render"]:
-                env = gym.make(cfg["env_id"], render_mode="rgb_array")
+            self.env = gym.make(self.config["env_id"], render_mode="rgb_array")
+            
+            if self.model is None:
+                self.model = create_model(
+                    algo_name=self.config["algo_name"],
+                    env=self.env,
+                    seed=self.config.get("seed"),
+                    **self.config.get("hyperparams", {})
+                )
             else:
-                env = gym.make(cfg["env_id"])
-            if cfg["seed"] is not None:
-                env.reset(seed=cfg["seed"])
+                self.model.set_env(self.env)
 
-            algo_class = import_algorithm_class(cfg["algo_name"])
-            model = algo_class("MlpPolicy", env, verbose=0, **cfg["hyperparams"])
-            callback = DashboardCallback(render_env=cfg["render"])
-            callback.worker_ref = self
+            def check_stop(): return self._stop_flag
 
-            # Timer pour vider les queues
-            self._timer = QTimer()
-            self._timer.timeout.connect(self._process_queues)
-            self._timer.start(100)
+            callback = DashboardCallback(
+                emit_fn=self.metrics_updated.emit,
+                total_timesteps=self.config["total_timesteps"],
+                stop_flag_fn=check_stop,
+                throttle_seconds=0.25,
+                frame_emit_fn=self.frame_ready.emit
+            )
 
-            model.learn(total_timesteps=cfg["total_timesteps"], callback=callback)
-            self.trained_model = model
+            self.model.learn(
+                total_timesteps=self.config["total_timesteps"],
+                callback=callback,
+                reset_num_timesteps=False
+            )
 
-            os.makedirs(cfg["save_dir"], exist_ok=True)
-            path = os.path.join(cfg["save_dir"], f"{cfg['algo_name']}_{cfg['env_id']}.zip")
-            model.save(path)
-            self.training_complete.emit(path)
-        except Exception as e:
-            self.training_error.emit(str(e))
-        finally:
-            if self._timer:
-                self._timer.stop()
-            self._process_queues()  # dernier flush
-            if self._stop_flag:
+            if not self._stop_flag:
+                save_dir = "saved_models"
+                os.makedirs(save_dir, exist_ok=True)
+                save_filename = f"{self.config['algo_name']}_{self.config['env_id']}.zip"
+                save_path = os.path.join(save_dir, save_filename)
+                
+                self.model.save(save_path)
+                self.training_finished.emit(save_path)
+            else:
                 self.training_stopped.emit()
 
-    def _process_queues(self):
-        while self.metrics_queue:
-            m = self.metrics_queue.pop(0)
-            self.metrics_updated.emit(m)
-            if "timestep" in m and self._config:
-                prog = int(100 * m["timestep"] / self._config["total_timesteps"])
-                self.progress_updated.emit(prog)
-        while self.frame_queue:
-            frame = self.frame_queue.pop(0)
-            self.frame_ready.emit(frame)
+        except Exception as e:
+            err_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+            self.training_error.emit(err_msg)
+        finally:
+            if self.env is not None:
+                try: self.env.close()
+                except Exception: pass

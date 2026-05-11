@@ -1,9 +1,3 @@
-"""
-Configuration Modal Dialog.
-Allows selecting environment, algorithm, hyperparameters, and training control.
-Modal window that stays open until close button or Train action.
-"""
-
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QLineEdit, 
     QPushButton, QFileDialog, QFormLayout, QScrollArea, QWidget, QFrame
@@ -25,7 +19,7 @@ class ConfigModal(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Training Configuration")
         self.setModal(True)
-        self.setFixedSize(600, 800)
+        self.setFixedSize(600, 650)
         self.setStyleSheet("""
             QDialog {
                 background-color: #27272A;
@@ -38,7 +32,6 @@ class ConfigModal(QDialog):
         layout.setContentsMargins(20, 16, 20, 16)
         layout.setSpacing(12)
 
-        # --- Header with Close Button ---
         header = QHBoxLayout()
         title = QLabel("⚙ Training Configuration")
         title.setStyleSheet("font-size: 16px; font-weight: bold; color: #6366F1;")
@@ -65,13 +58,11 @@ class ConfigModal(QDialog):
         header.addWidget(self.btn_close)
         layout.addLayout(header)
 
-        # --- Separator ---
         sep1 = QFrame()
         sep1.setFrameShape(QFrame.Shape.HLine)
         sep1.setStyleSheet("background-color: #3F3F46;")
         layout.addWidget(sep1)
 
-        # --- Scrollable Content ---
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
@@ -100,25 +91,21 @@ class ConfigModal(QDialog):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(20)
 
-        # --- Section 1: Environment ---
         env_section = self._create_section("Environment Selection", [
             ("Environment", self._create_environment_combo())
         ])
         content_layout.addWidget(env_section)
 
-        # --- Section 2: Algorithm ---
         algo_section = self._create_section("Algorithm Selection", [
             ("Algorithm", self._create_algorithm_combo())
         ])
         content_layout.addWidget(algo_section)
 
-        # Algorithm details label
         self.lbl_algo_details = QLabel("")
         self.lbl_algo_details.setWordWrap(True)
         self.lbl_algo_details.setStyleSheet("font-size: 11px; color: #A1A1AA; margin: 8px 12px;")
         content_layout.addWidget(self.lbl_algo_details)
 
-        # --- Section 3: Hyperparameters ---
         self.hyperparams_container = QWidget()
         self.hyperparams_container.setStyleSheet("background-color: transparent;")
         self.hyperparams_form = QFormLayout(self.hyperparams_container)
@@ -131,7 +118,6 @@ class ConfigModal(QDialog):
 
         self.hyperparam_inputs = {}
 
-        # --- Section 4: Training Parameters ---
         ts_seed_layout = QHBoxLayout()
         ts_seed_layout.setSpacing(12)
 
@@ -167,13 +153,11 @@ class ConfigModal(QDialog):
         scroll.setWidget(content)
         layout.addWidget(scroll)
 
-        # --- Bottom Separator ---
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.Shape.HLine)
         sep2.setStyleSheet("background-color: #3F3F46;")
         layout.addWidget(sep2)
 
-        # --- Action Buttons ---
         buttons = QHBoxLayout()
         buttons.setSpacing(12)
 
@@ -195,7 +179,6 @@ class ConfigModal(QDialog):
 
         layout.addLayout(buttons)
 
-        # --- Secondary Action Buttons ---
         buttons2 = QHBoxLayout()
         buttons2.setSpacing(12)
 
@@ -216,7 +199,6 @@ class ConfigModal(QDialog):
 
         layout.addLayout(buttons2)
 
-        # --- Initialization ---
         self._populate_environments()
         self._update_algorithms()
 
@@ -407,7 +389,6 @@ class ConfigModal(QDialog):
         if file_path:
             self.load_model_requested.emit(file_path)
 
-    # --- Styling Methods ---
     def _get_input_style(self) -> str:
         return """
             QLineEdit {

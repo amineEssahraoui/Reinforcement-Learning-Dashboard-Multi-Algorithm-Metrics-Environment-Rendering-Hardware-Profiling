@@ -1,17 +1,9 @@
-"""
-Algorithm registry for Stable Baselines3 and SB3-Contrib.
-Provides metadata, compatibility filtering, hyperparameter configs,
-and model creation utilities.
-"""
-
 import gymnasium as gym
 from typing import Any
 
 
-# ─── Algorithm Metadata ──────────────────────────────────────────────────────
 
 ALGORITHM_REGISTRY: dict[str, dict[str, Any]] = {
-    # ── Stable Baselines3 (core) ──────────────────────────────────
     "A2C": {
         "module": "stable_baselines3",
         "class_name": "A2C",
@@ -123,7 +115,6 @@ ALGORITHM_REGISTRY: dict[str, dict[str, Any]] = {
         },
     },
 
-    # ── SB3-Contrib ───────────────────────────────────────────────
     "TRPO": {
         "module": "sb3_contrib",
         "class_name": "TRPO",
@@ -262,6 +253,11 @@ def get_compatible_algorithms(env_id: str) -> list[str]:
     return compatible
 
 
+def get_algorithm_metadata(algo_name: str) -> dict[str, Any]:
+    """Return metadata for a given algorithm name."""
+    return ALGORITHM_REGISTRY.get(algo_name, {})
+
+
 def import_algorithm_class(algo_name: str):
     """Lazily import and return the algorithm class."""
     meta = ALGORITHM_REGISTRY[algo_name]
@@ -292,7 +288,6 @@ def create_model(algo_name: str, env, seed: int = None, **overrides):
     cls = import_algorithm_class(algo_name)
     policy = meta["policy"]
     
-    # Build hyperparams dict from defaults, then apply overrides
     hyperparams = {}
     for key, cfg in meta["hyperparams"].items():
         if key in overrides:
@@ -300,7 +295,6 @@ def create_model(algo_name: str, env, seed: int = None, **overrides):
         else:
             hyperparams[key] = cfg["default"]
     
-    # Remove special string-type params that need special handling
     if "ent_coef" in hyperparams and hyperparams["ent_coef"] == "auto":
         hyperparams["ent_coef"] = "auto"
     
