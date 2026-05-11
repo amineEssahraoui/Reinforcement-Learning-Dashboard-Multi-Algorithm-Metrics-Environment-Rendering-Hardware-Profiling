@@ -1,0 +1,62 @@
+[
+    {
+        "topic": "A2C (Advantage Actor-Critic)",
+        "category": "Algorithm",
+        "content": "A2C is a synchronous, deterministic version of the Actor-Critic framework[cite: 1]. It operates by having an 'Actor' that learns the policy (what action to take) and a 'Critic' that learns to estimate the value function (how good a state is)[cite: 1]. The 'Advantage' is calculated as the difference between the actual return and the critic's estimate, reducing variance in policy updates[cite: 1]. Key hyperparameters include: 'learning_rate' (defaults to 7e-4) which controls the update step size; 'n_steps' (default: 5) which determines how many environment steps are taken before an update; and 'ent_coef' (entropy coefficient) which encourages exploration by penalizing a deterministic policy[cite: 1]."
+    },
+    {
+        "topic": "PPO (Proximal Policy Optimization)",
+        "category": "Algorithm",
+        "content": "PPO is an on-policy algorithm designed to strike a balance between ease of implementation, sample efficiency, and ease of tuning[cite: 1]. It works by using a 'clipped surrogate objective' that prevents the new policy from moving too far away from the old policy during an update, which ensures training stability[cite: 1]. Important hyperparameters from the registry include: 'clip_range' (default: 0.2), which defines the limit of policy changes; 'n_epochs' (default: 10), the number of times the optimizer passes through the data; and 'batch_size' (default: 64), which determines the number of samples used per gradient update[cite: 1]."
+    },
+    {
+        "topic": "DQN (Deep Q-Network)",
+        "category": "Algorithm",
+        "content": "DQN is a value-based off-policy algorithm that uses a deep neural network to approximate the Q-function for discrete action spaces[cite: 1]. It solves the instability of using neural networks in RL by implementing 'Experience Replay' (storing and sampling past transitions) and a 'Target Network' that is updated less frequently than the main network[cite: 1]. Critical hyperparameters include: 'buffer_size' (1,000,000 steps), the capacity of the replay memory; 'exploration_fraction' (default: 0.1), the percentage of the total steps over which the exploration rate is reduced; and 'target_update_interval', which dictates how often the target network weights are synchronized[cite: 1]."
+    },
+    {
+        "topic": "SAC (Soft Actor-Critic)",
+        "category": "Algorithm",
+        "content": "SAC is an off-policy actor-critic algorithm focused on continuous action spaces that incorporates the 'Maximum Entropy' framework[cite: 1]. Unlike standard RL, SAC aims to maximize both the expected reward and the entropy of the policy, which promotes extensive exploration and prevents the agent from collapsing onto a single strategy[cite: 1]. Key hyperparameters include: 'tau' (0.005), which controls the smoothing of target network updates; 'ent_coef' (often set to 'auto'), which manages the trade-off between reward and entropy; and 'learning_starts' (default: 100), the number of steps taken to fill the buffer before learning begins[cite: 1]."
+    },
+    {
+        "topic": "TD3 (Twin Delayed DDPG)",
+        "category": "Algorithm",
+        "content": "TD3 is an improvement over DDPG that addresses the overestimation bias often found in value-based methods[cite: 1]. It introduces three primary mechanics: 'Clipped Double-Q Learning' to reduce overestimation, 'Target Policy Smoothing' to prevent the policy from exploiting errors in the Q-function, and 'Delayed Policy Updates'[cite: 1]. Notable hyperparameters from the registry: 'policy_delay' (default: 2), specifying that the policy is updated less frequently than the value function; and 'tau' (0.005), used for the soft update of target networks[cite: 1]."
+    },
+    {
+        "topic": "TRPO (Trust Region Policy Optimization)",
+        "category": "Algorithm",
+        "content": "TRPO is an on-policy method that ensures policy updates stay within a 'Trust Region' defined by a KL-divergence constraint[cite: 1]. It mathematically guarantees that each update will result in a policy that is at least as good as the previous one, making it highly stable for complex continuous control[cite: 1]. Key parameters include: 'target_kl' (default: 0.01), which sets the maximum allowed change in the policy distribution; and 'gae_lambda' (0.95), used to compute the Generalized Advantage Estimation for variance reduction[cite: 1]."
+    },
+    {
+        "topic": "RecurrentPPO",
+        "category": "Algorithm",
+        "content": "RecurrentPPO extends PPO by replacing the standard MLP layers with LSTM (Long Short-Term Memory) units to handle partially observable environments[cite: 1]. This allows the agent to maintain an internal state (memory) of past observations, which is crucial when the current observation doesn't contain all the information needed to solve the task[cite: 1]. Specific hyperparameters: 'n_steps' (default: 128) and 'policy', which is set to 'MlpLstmPolicy' to enable the recurrent architecture[cite: 1]."
+    },
+    {
+        "topic": "MaskablePPO",
+        "category": "Algorithm",
+        "content": "MaskablePPO is a variant of PPO designed for environments where certain actions are invalid at specific states[cite: 1]. It applies an 'Action Mask' to the policy output, forcing the probability of invalid actions to zero before sampling[cite: 1]. This prevents the agent from wasting time exploring illegal moves and stabilizes training in complex discrete environments[cite: 1]. It uses standard PPO hyperparameters like 'clip_range' (0.2) and 'ent_coef' to manage exploration[cite: 1]."
+    },
+    {
+        "topic": "QR-DQN (Quantile Regression DQN)",
+        "category": "Algorithm",
+        "content": "QR-DQN is a distributional RL algorithm that learns the distribution of the return instead of just its expectation[cite: 1]. It approximates the distribution using quantile regression, allowing the agent to better capture the risks and rewards of different actions[cite: 1]. Important hyperparameters include: 'exploration_fraction' (0.1) for epsilon-greedy exploration and 'target_update_interval' (10,000), which manages the stability of the quantile targets[cite: 1]."
+    },
+    {
+        "topic": "TQC (Truncated Quantile Critics)",
+        "category": "Algorithm",
+        "content": "TQC is an advanced distributional off-policy algorithm that builds upon SAC[cite: 1]. It uses multiple quantile critics and 'truncates' the top (most optimistic) quantiles to aggressively combat overestimation bias in high-dimensional tasks[cite: 1]. A unique hyperparameter in the registry is 'top_quantiles_to_drop_per_net' (default: 2), which controls how many of the highest quantile values are discarded during the value estimation[cite: 1]."
+    },
+    {
+        "topic": "ARS (Augmented Random Search)",
+        "category": "Algorithm",
+        "content": "ARS is a derivative-free optimization method that falls under the category of evolution strategies[cite: 1]. Instead of using backpropagation, it randomly perturbs the policy weights, evaluates the performance in the environment, and updates the weights in the direction of higher rewards[cite: 1]. Key parameters: 'n_delta' (default: 8), the number of random noise vectors sampled; and 'delta_std' (0.05), the standard deviation of the noise used to perturb the weights[cite: 1]."
+    },
+    {
+        "topic": "CrossQ",
+        "category": "Algorithm",
+        "content": "CrossQ is a variation of the SAC algorithm that utilizes Batch Normalization in the critic networks to improve sample efficiency[cite: 1]. While traditionally difficult to implement in RL, CrossQ's architecture allows it to use higher learning rates safely[cite: 1]. It shares many hyperparameters with SAC, such as 'tau' (0.005) for soft updates and 'batch_size' (256) for intensive gradient updates[cite: 1]."
+    }
+]
