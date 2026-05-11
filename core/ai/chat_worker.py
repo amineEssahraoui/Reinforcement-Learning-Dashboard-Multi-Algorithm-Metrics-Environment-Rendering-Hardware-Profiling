@@ -10,7 +10,7 @@ class AIChatWorker(QThread):
     response_ready = pyqtSignal(str)
     error_occurred = pyqtSignal(str)
 
-    def __init__(self, data_dir: str = "core/ai/data", model_name: str = "llama3:8b", parent=None):
+    def __init__(self, data_dir: str = "core/ai/data", model_name: str = "llama3.2:latest", parent=None):
         super().__init__(parent)
         self.data_dir = data_dir
         self.model_name = model_name

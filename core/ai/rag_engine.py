@@ -4,7 +4,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 class RAGEngine:
-    def __init__(self, retriever, model_name: str = "llama3"):
+    def __init__(self, retriever, model_name: str = "llama3.2:latest"):
         
         self.retriever = retriever
         
