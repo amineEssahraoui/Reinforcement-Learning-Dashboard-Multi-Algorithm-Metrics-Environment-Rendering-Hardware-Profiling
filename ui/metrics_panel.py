@@ -63,3 +63,62 @@ class MetricsPanel(QWidget):
         plot.getAxis('bottom').setTextPen('#A1A1AA')
         
         return plot
+    
+    def _create_stat_badge(self, text: str, color_key: str) -> QLabel:
+        """Crée un petit badge pour afficher une métrique clé."""
+        color = get_pyqtgraph_color(color_key)
+        lbl = QLabel(text)
+        lbl.setStyleSheet(f"""
+            background-color: #18181B; 
+            border: 1px solid #3F3F46; 
+            border-radius: 4px; 
+            padding: 4px 8px; 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: {color};
+        """)
+        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        return lbl
+
+    @pyqtSlot(dict)
+    def update_metrics(self, metrics: dict):
+        ts = metrics.get("timestep", 0)
+        self.data_timesteps.append(ts)
+        
+        # Update Reward
+        rew = metrics.get("ep_rew_mean", 0.0)
+        self.data_reward.append(rew)
+        self.curve_reward.setData(self.data_timesteps, self.data_reward)
+        
+        # Update Loss (diffère selon l'algo, on essaie de prendre 'loss' ou 'policy_gradient_loss')
+        losses = metrics.get("losses", {})
+        loss_val = losses.get("loss", losses.get("policy_gradient_loss", 0.0))
+        self.data_loss.append(loss_val)
+        self.curve_loss.setData(self.data_timesteps, self.data_loss)
+        
+        # Update Length
+        ep_len = metrics.get("ep_len_mean", 0.0)
+        self.data_len.append(ep_len)
+        self.curve_len.setData(self.data_timesteps, self.data_len)
+        
+        # Update Badges
+        fps = metrics.get("fps", 0)
+        prog = metrics.get("progress", 0.0) * 100
+        
+        self.lbl_fps.setText(f"FPS: {int(fps)}")
+        self.lbl_rew.setText(f"Rew: {rew:.1f}")
+        self.lbl_prog.setText(f"{int(prog)}%")
+
+    def clear_data(self):
+        self.data_timesteps.clear()
+        self.data_reward.clear()
+        self.data_loss.clear()
+        self.data_len.clear()
+        
+        self.curve_reward.setData([], [])
+        self.curve_loss.setData([], [])
+        self.curve_len.setData([], [])
+        
+        self.lbl_fps.setText("FPS: 0")
+        self.lbl_rew.setText("Rew: 0.0")
+        self.lbl_prog.setText("0%")
