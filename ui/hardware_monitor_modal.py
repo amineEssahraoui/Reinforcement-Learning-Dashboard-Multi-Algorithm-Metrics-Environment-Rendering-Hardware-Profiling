@@ -1,6 +1,7 @@
 import random
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QWidget, QFrame
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QWidget, QFrame,
+    QSizePolicy,
 )
 from PyQt6.QtCore import QTimer, Qt
 import pyqtgraph as pg
@@ -25,7 +26,9 @@ class HardwareMonitorModal(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Hardware Monitor")
         self.setModal(True)
-        self.setFixedSize(600, 600)
+        self.resize(620, 640)
+        self.setMinimumSize(480, 420)
+        self.setSizeGripEnabled(True)
         self.setStyleSheet("""
             QDialog {
                 background-color: #27272A;
@@ -117,7 +120,8 @@ class HardwareMonitorModal(QDialog):
         # Graph
         color = get_pyqtgraph_color(color_key)
         plot = pg.PlotWidget()
-        plot.setFixedHeight(150)
+        plot.setMinimumHeight(130)
+        plot.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         plot.setBackground(None)
         plot.showGrid(x=False, y=True, alpha=0.2)
         plot.setYRange(0, 100)

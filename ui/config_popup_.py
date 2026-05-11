@@ -19,7 +19,9 @@ class ConfigModal(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Training Configuration")
         self.setModal(True)
-        self.setFixedSize(600, 650)
+        self.resize(620, 680)
+        self.setMinimumSize(520, 500)
+        self.setSizeGripEnabled(True)
         self.setStyleSheet("""
             QDialog {
                 background-color: #27272A;
