@@ -1,11 +1,14 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QSplitter, QMessageBox, QApplication
 from PyQt6.QtCore import Qt
 
+# --- IMPORTS UI UNIQUEMENT ---
 from ui.header_bar import HeaderBar
 from ui.metrics_panel import MetricsPanel
 from ui.environment_render import RenderPanel
 from ui.config_popup_ import ConfigModal
 from ui.hardware_monitor_modal import HardwareMonitorModal
+from ui.floating_chat_button import FloatingChatButton
+from ui.chat_window import ChatWindow
 from ui import theme
 
 from core.training_worker import TrainingWorker
@@ -23,6 +26,7 @@ class MainWindow(QMainWindow):
 
         self._setup_ui()
         self._setup_popups()
+        self._setup_chat()
         self._connect_signals()
 
     def _setup_ui(self):
@@ -52,6 +56,14 @@ class MainWindow(QMainWindow):
         self.config_modal = ConfigModal(self)
         self.hardware_modal = HardwareMonitorModal(self)
 
+    def _setup_chat(self):
+        """Initialise le bouton flottant et la fenêtre de chat."""
+        self.chat_button = FloatingChatButton(self)
+        self.chat_button.show()
+        self.chat_window = ChatWindow(self)
+        self.chat_window.move(600, 200) 
+        self.chat_window.hide()
+
     def _connect_signals(self):
         self.header.config_toggled.connect(self._toggle_config_modal)
         self.header.hardware_toggled.connect(self._toggle_hardware_modal)
@@ -70,6 +82,8 @@ class MainWindow(QMainWindow):
         self.eval_worker.frame_ready.connect(self.render_panel.receive_frame)
         self.eval_worker.eval_step_info.connect(self.render_panel.update_hud)
         self.eval_worker.evaluation_error.connect(self._show_error)
+        
+        self.chat_button.clicked.connect(self._toggle_chat_window)
 
     def _toggle_config_modal(self, show: bool):
         if show:
@@ -86,7 +100,6 @@ class MainWindow(QMainWindow):
             self.header.btn_hardware.setChecked(False)
         else:
             self.hardware_modal.reject()
-
 
     def _start_training(self, config: dict):
         self._stop_all() 
@@ -144,6 +157,26 @@ class MainWindow(QMainWindow):
         app.setStyleSheet(theme.get_stylesheet())
         self.header.sync_theme_icon()
 
+    def _toggle_chat_window(self):
+        """Invertit simplement la visibilité de la fenêtre de chat."""
+        if self.chat_window.isVisible():
+            self.chat_window.hide()
+        else:
+            self.chat_window.show()
+            self.chat_window.raise_()
+            self.chat_window.activateWindow()
+
+    def resizeEvent(self, event):
+        """Garde le bouton flottant en bas à droite lors du redimensionnement."""
+        super().resizeEvent(event)
+        margin_right = 30
+        margin_bottom = 30
+        new_x = self.width() - self.chat_button.width() - margin_right
+        new_y = self.height() - self.chat_button.height() - margin_bottom
+        self.chat_button.move(new_x, new_y)
+
     def closeEvent(self, event):
         self._stop_all()
+        if self.chat_window:
+            self.chat_window.close()
         event.accept()

@@ -1,0 +1,112 @@
+[
+    {
+        "topic": "Acrobot-v1",
+        "category": "Classic Control",
+        "content": "The system consists of two links connected linearly by a joint, with one end fixed. The goal is to swing the free end of the lower link above a specific height. Observation: 6 continuous values representing cosines and sines of the two joint angles and their angular velocities. Action: Discrete (3): apply -1, 0, or +1 torque to the joint. Reward: -1 for every step until the goal is reached."
+    },
+    {
+        "topic": "CartPole (v0/v1)",
+        "category": "Classic Control",
+        "content": "A pole is attached to a cart moving along a frictionless track. The goal is to balance the pole by moving the cart left or right. Observation: 4 values (cart position, cart velocity, pole angle, pole angular velocity). Action: Discrete (2): 0 for left, 1 for right. Reward: +1 for every step the pole stays upright. v1 has a longer maximum episode length (500) compared to v0 (200)."
+    },
+    {
+        "topic": "MountainCar-v0",
+        "category": "Classic Control",
+        "content": "An underpowered car must climb a steep hill. Because the engine is weak, the agent must build momentum by driving back and forth. Observation: 2 values (position and velocity). Action: Discrete (3): 0: left, 1: no act, 2: right. Reward: -1 per step until the flag is reached at position 0.5."
+    },
+    {
+        "topic": "MountainCarContinuous-v0",
+        "category": "Classic Control",
+        "content": "Similar to MountainCar-v0, but the action space is continuous. Observation: position and velocity. Action: Continuous (1): a value from -1.0 to 1.0 representing the force applied to the car. Reward: Positive reward for reaching the goal, minus a penalty for the amount of fuel/effort used."
+    },
+    {
+        "topic": "Pendulum-v1",
+        "category": "Classic Control",
+        "content": "The objective is to swing a weighted pendulum into an upright position and keep it balanced there. Observation: 3 values (cos(theta), sin(theta), and angular velocity). Action: Continuous (1): torque ranging from -2.0 to 2.0. Reward: A penalty based on the angle (theta^2), angular velocity (0.1*theta_dot^2), and effort (0.001*torque^2)."
+    },
+    {
+        "topic": "BipedalWalker (v3/Hardcore)",
+        "category": "Box2D",
+        "content": "A 2D robot with two legs must walk across a generated terrain. Observation: 24 values including hull angle, velocities, joint angles, and lidar rangefinder data. Action: Continuous (4): torques for the hip and knee joints. Reward: Reward for moving forward, penalty for hull movement and falling. 'Hardcore' version adds obstacles like pits, stumps, and stairs."
+    },
+    {
+        "topic": "CarRacing-v3",
+        "category": "Box2D",
+        "content": "A top-down racing game where a car must visit as many tiles on a randomly generated track as possible. Observation: 96x96 RGB pixel images. Action: Continuous (3): steering, gas, and braking. Reward: -0.1 per frame, and +1000/N for every track tile visited, where N is the total number of tiles."
+    },
+    {
+        "topic": "LunarLander (v3/Continuous)",
+        "category": "Box2D",
+        "content": "The agent must land a lander on a designated landing pad. Observation: 8 values (coordinates, velocities, angle, angular velocity, and leg ground contact). Action: Discrete (4 actions) or Continuous (2 values for main and side engines). Reward: +100 for successful landing, -100 for crashing, with points gained/lost for fuel use and leg contact."
+    },
+    {
+        "topic": "Ant (v2-v5)",
+        "category": "MuJoCo",
+        "content": "A four-legged 'Ant' robot must learn to walk forward in 3D space. Observation: High-dimensional vector of joint positions and velocities. Action: Continuous (8): torques applied to the 8 leg joints. Reward: Forward velocity reward minus control costs and contact costs. Newer versions (v4/v5) improve physics stability and XML definitions."
+    },
+    {
+        "topic": "HalfCheetah (v2-v5)",
+        "category": "MuJoCo",
+        "content": "A 2D robot with 7 links and 6 joints. The goal is to run forward as fast as possible. Observation: 17 values (positions and velocities of joints). Action: Continuous (6): torques applied to joints. Reward: Forward movement reward minus control cost. This environment is popular for benchmarking because it doesn't terminate if the agent falls."
+    },
+    {
+        "topic": "Hopper (v2-v5)",
+        "category": "MuJoCo",
+        "content": "A one-legged robot that must hop forward. Observation: 11 values (joint angles and velocities). Action: Continuous (3): torques for the thigh, leg, and foot joints. Reward: Based on forward speed and 'healthy' reward for staying upright. It terminates if the hopper falls or jumps too high."
+    },
+    {
+        "topic": "Humanoid (v2-v5)",
+        "category": "MuJoCo",
+        "content": "A highly complex 3D bipedal robot. Goal: Walk forward without falling. Observation: ~376 values (very high dimensional). Action: Continuous (17): torques for all body joints. Reward: Reward for velocity, 'healthy' reward, minus energy costs. This is considered one of the hardest MuJoCo benchmarks."
+    },
+    {
+        "topic": "HumanoidStandup (v2-v5)",
+        "category": "MuJoCo",
+        "content": "Starts with the Humanoid lying on the ground. The objective is to make the agent stand up and maintain its height. Reward: Based on the height of the humanoid's head. It is often used to test coordination and recovery behaviors."
+    },
+    {
+        "topic": "InvertedPendulum / DoublePendulum",
+        "category": "MuJoCo",
+        "content": "InvertedPendulum involves balancing a single pole on a cart using MuJoCo physics. DoublePendulum involves two poles. Goal: Keep the poles vertical. Action: Continuous force applied to the cart. Reward: Based on how long the poles stay upright and their proximity to the center."
+    },
+    {
+        "topic": "Reacher (v2-v5)",
+        "category": "MuJoCo",
+        "content": "A two-jointed arm must move its end-effector to a random target position. Observation: Joint angles, target position, and distance to target. Action: Continuous (2): torques for the two arm joints. Reward: Negative distance between the fingertip and the target."
+    },
+    {
+        "topic": "Swimmer (v2-v5)",
+        "category": "MuJoCo",
+        "content": "A multi-link robot swimming in a viscous fluid. Goal: Move forward as fast as possible. Action: Continuous torques on joints. Unlike walking tasks, this requires coordinating body waves to propel forward through the fluid."
+    },
+    {
+        "topic": "Walker2d (v2-v5)",
+        "category": "MuJoCo",
+        "content": "A 2D bipedal robot with two legs and feet. Goal: Walk forward as fast as possible. Action: Continuous (6) torques. Reward: Forward velocity plus healthy reward minus control cost. Terminates if the robot falls below a certain height."
+    },
+    {
+        "topic": "Blackjack-v1",
+        "category": "Toy Text",
+        "content": "A card game environment. The goal is to reach 21 or beat the dealer without busting. Observation: 3-tuple (player's current sum, dealer's showing card, usable ace). Action: Discrete (2): 0 for 'stick', 1 for 'hit'. Reward: +1 for win, 0 for draw, -1 for loss."
+    },
+    {
+        "topic": "FrozenLake (v1 / 8x8)",
+        "category": "Toy Text",
+        "content": "An agent must cross a grid from Start to Goal while avoiding holes. Observation: Discrete state (current cell index). Action: Discrete (4): move in 4 directions. In 'Slippery' mode, the agent has only a 1/3 chance of moving in the desired direction. Reward: +1 for reaching the goal, 0 otherwise."
+    },
+    {
+        "topic": "CliffWalking (v1 / Slippery)",
+        "category": "Toy Text",
+        "content": "A grid world where the agent must reach a goal from a start point while avoiding a cliff. Observation: Discrete (current cell). Action: Discrete (4): move North, South, East, West. Stepping off the cliff resets the agent and gives a -100 reward. 'Slippery' version adds movement randomness."
+    },
+    {
+        "topic": "Taxi-v4",
+        "category": "Toy Text",
+        "content": "A taxi must pick up a passenger at one of four locations and drop them off at a destination. Observation: 500 discrete states (5x5 grid positions, passenger location, and destination). Action: Discrete (6): 4 moves, pick up, and drop off. Reward: -1 per step, +20 for drop-off, -10 for illegal moves."
+    },
+    {
+        "topic": "Other (GymV21 / V26)",
+        "category": "Other",
+        "content": "These are compatibility wrappers designed to allow environments from older versions of OpenAI Gym (v0.21 or v0.26) to run within the current Gymnasium API. They handle differences in the 'step' function return values (Done vs. Terminated/Truncated)."
+    }
+]

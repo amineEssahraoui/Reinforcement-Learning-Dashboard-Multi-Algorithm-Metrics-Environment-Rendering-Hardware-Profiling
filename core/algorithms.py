@@ -1,8 +1,6 @@
 import gymnasium as gym
 from typing import Any
 
-
-
 ALGORITHM_REGISTRY: dict[str, dict[str, Any]] = {
     "A2C": {
         "module": "stable_baselines3",
