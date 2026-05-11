@@ -1,0 +1,62 @@
+[
+    {
+        "topic": "Learning Rate (lr)",
+        "category": "Optimization",
+        "content": "The learning rate is the most critical hyperparameter in RL. It controls the magnitude of the weight updates in the neural network during backpropagation. A high learning rate (e.g., > 1e-3) can lead to rapid learning but risks permanent instability and 'catastrophic forgetting.' A low learning rate (e.g., 1e-5) ensures stability but may result in extremely slow convergence or the agent getting stuck in a local optimum. In PPO, a value of 3e-4 is the standard benchmark."
+    },
+    {
+        "topic": "Gamma (Discount Factor)",
+        "category": "Temporal Credit Assignment",
+        "content": "Gamma (usually between 0.9 and 0.999) determines the agent's horizon. It mathematically discounts the value of future rewards. A value of 0.99 means a reward 100 steps in the future is worth roughly 36% of its immediate value. High Gamma forces the agent to plan for long-term goals (farsighted), while low Gamma makes it focus on immediate gratification (nearsighted). If Gamma is too high in a noisy environment, the agent may struggle to find a clear signal."
+    },
+    {
+        "topic": "Batch Size",
+        "category": "Optimization / Sample Efficiency",
+        "content": "Batch size defines how many transitions are sampled from memory to perform one gradient update. Larger batches (e.g., 256, 512) provide a more stable and accurate estimate of the 'true' gradient, leading to smoother updates. However, smaller batches (e.g., 32, 64) introduce more noise, which can actually help the agent escape local optima during the early stages of training. It is directly tied to hardware memory (VRAM) capacity."
+    },
+    {
+        "topic": "GAE Lambda (Generalized Advantage Estimation)",
+        "category": "Variance Reduction",
+        "content": "Lambda is used to balance the trade-off between bias and variance when calculating the 'Advantage' (how much better an action was than expected). A Lambda of 1.0 is equivalent to Monte Carlo sampling (high variance, no bias), while a Lambda of 0.0 is like TD-learning (low variance, high bias). Standard RL practice uses 0.95 to achieve a stable estimation that helps algorithms like PPO and A2C converge faster."
+    },
+    {
+        "topic": "Entropy Coefficient (ent_coef)",
+        "content": "This parameter controls the 'exploration vs. exploitation' trade-off by adding a bonus to the loss function based on the entropy of the policy's action distribution. A higher ent_coef (e.g., 0.01) forces the agent to keep its actions diverse and random, preventing it from converging too early to a single sub-optimal strategy. As the agent learns, this value is often decayed or kept small to allow the agent to eventually specialize in the best actions found.",
+        "category": "Exploration Strategy"
+    },
+    {
+        "topic": "Tau (Soft Update Coefficient)",
+        "category": "Target Network Stability",
+        "content": "Used in off-policy algorithms like SAC, DDPG, and TD3. Instead of copying the weights of the 'online' network to the 'target' network directly (hard update), Tau (e.g., 0.005) performs a Polyak averaging. This means the target network only moves a tiny fraction toward the online network at each step. This creates a stable 'moving target' for the Q-value estimation, which is essential for preventing mathematical divergence in deep Q-learning."
+    },
+    {
+        "topic": "Buffer Size (Replay Memory)",
+        "category": "Data Management",
+        "content": "Specific to off-policy algorithms (DQN, SAC). It defines the maximum number of past experiences (state, action, reward, next_state) the agent keeps in memory. A large buffer (1,000,000 steps) allows the agent to learn from a diverse set of past situations, reducing data correlation. However, if the buffer is too large and the environment changes, the agent might learn from 'stale' data that is no longer relevant to its current policy."
+    },
+    {
+        "topic": "Clip Range (PPO Specific)",
+        "category": "Policy Stability",
+        "content": "This hyperparameter (usually 0.2) is the core of the PPO algorithm. It clips the policy gradient update to ensure the new policy does not deviate by more than 20% from the old policy in a single step. This 'trust region' approach prevents the agent from taking a massive, erroneous step in the weight space that could ruin hours of training progress."
+    },
+    {
+        "topic": "Max Grad Norm",
+        "category": "Optimization / Stability",
+        "content": "This is a technique called 'Gradient Clipping.' If the global norm of the gradients exceeds this value (e.g., 0.5), they are scaled down. This prevents 'exploding gradients,' a common issue in Deep RL where a single bad update produces massive numbers that destroy the neural network's weights. It is a safety net for numerical stability."
+    },
+    {
+        "topic": "Target Update Interval",
+        "category": "Value Estimation Stability",
+        "content": "Used in DQN and its variants. It defines how many steps the agent takes before synchronizing the Target Network with the Policy Network. While Tau uses soft updates every step, this parameter uses 'hard updates' every X steps (e.g., every 10,000 steps). It ensures that the values the agent is trying to predict stay constant for a long enough period to allow the neural network to learn effectively."
+    },
+    {
+        "topic": "N-Steps (Rollout Length)",
+        "category": "Trajectory Collection",
+        "content": "In on-policy algorithms like A2C or PPO, this defines how many steps of experience are collected from the environment before a gradient update is performed. Short rollouts provide more frequent updates but can be noisy. Long rollouts (e.g., 2048 steps) provide a more holistic view of the trajectory, leading to more stable but less frequent updates."
+    },
+    {
+        "topic": "Learning Starts",
+        "category": "Initialization",
+        "content": "Determines how many random actions the agent should take to fill the Replay Buffer before the first learning update occurs. This ensures that the initial training batches are not biased toward a single, poorly initialized starting policy. For complex tasks, setting this to several thousand steps is common to ensure a diverse initial dataset."
+    }
+]
