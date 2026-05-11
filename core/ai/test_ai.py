@@ -25,7 +25,7 @@ def main():
         print(f"Knowledge base loaded successfully. ({len(kb.vector_store.docstore._dict)} chunks found)")
         
         # Step 2: Launch the engine with Llama 3
-        engine = RAGEngine(retriever=retriever, model_name="llama3:8b")
+        engine = RAGEngine(retriever=retriever, model_name="llama3.2:latest")
         print(f"RAG Engine connected to Ollama in {time.time() - start_time:.1f} seconds!\n")
         
     except Exception as e:
