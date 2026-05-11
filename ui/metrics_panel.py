@@ -47,3 +47,19 @@ class MetricsPanel(QWidget):
         stats_layout.addWidget(self.lbl_rew)
         stats_layout.addWidget(self.lbl_prog)
         layout.addLayout(stats_layout)
+
+    def _create_title(self, text: str) -> QLabel:
+        lbl = QLabel(text)
+        lbl.setStyleSheet("font-size: 11px; color: #A1A1AA; text-transform: uppercase; font-weight: bold;")
+        return lbl
+
+    def _create_plot(self) -> pg.PlotWidget:
+        plot = pg.PlotWidget()
+        plot.setBackground(None) 
+        plot.showGrid(x=True, y=True, alpha=0.15) 
+        plot.getAxis('left').setPen('#3F3F46')
+        plot.getAxis('left').setTextPen('#A1A1AA')
+        plot.getAxis('bottom').setPen('#3F3F46')
+        plot.getAxis('bottom').setTextPen('#A1A1AA')
+        
+        return plot
